@@ -1,9 +1,8 @@
 # Teeny Tiny Two Dee Engine
 
-A teeny tiny 2d template written in TypeScript and uses Electron Forge. Nothing particularly compelling, but it's a familiar way for me to quickly build simple projects for game jams and other ideas. If it helps someone else, that's cool. :-)
+A teeny tiny 2d template written in TypeScript that uses Electron Forge for running on the desktop. I'm not sure this is particularly compelling, but it's a familiar way for me to quickly build simple projects for game jams and other ideas. If it helps someone else, that's cool. :-)
 
-Example screen `./src/screens/mainGameScreen.ts` in project shows off setting up the ECS and rending using ray casting. Teeny Tiny Two Dee Engine is the basis of another currently closed source
-game. The `lib` project from the game will slowly trickle back out into this project.
+Example screen here: `./src/screens/mainGameScreen.ts` if you'd like to play around with the project this shows off setting up the ECS and rending using ray casting. The Teeny Tiny Two Dee Engine is the basis of another currently closed source game. The `lib` project from the game will slowly trickle back out into this project.
 
 #### Features
 
@@ -29,7 +28,7 @@ game. The `lib` project from the game will slowly trickle back out into this pro
 
 ### Screens
 
-Everything is organized around a `screen` a screen has the following functions:
+Everything is organized around the concept of a  `screen` a screen has the following functions:
 
 1. init: A function called during initiation of the class 
 2. onEnter: A function called every time you return to the screen from another screen
@@ -44,9 +43,10 @@ Everything is organized around a `screen` a screen has the following functions:
 ### Game Loop
 
 1. Execute current game screen logicLoop
-2. Clear screen
-3. Execute current game screen renderLoop
-4. Go to 1
+2. Execute an global logic
+3. Clear screen
+4. Execute current game screen renderLoop
+5. Go to 1
 
 ### Building
 
@@ -55,11 +55,6 @@ Everything is organized around a `screen` a screen has the following functions:
 ### Running
 
 1. Type: `npm run start`
-
-### Example Project
-
-There's a very simple example project in `./src/app` to get you started.
-
 
 ### Credit
 
