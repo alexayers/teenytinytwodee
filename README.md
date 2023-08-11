@@ -15,7 +15,7 @@ game. The `lib` project from the game will slowly trickle back out into this pro
 - [x] Event Bus
 - [x] Simple Random helpers utilities
 - [x] Simple logger
-- [x] ECS
+- [x] Entity Component System (ECS) 
 
 ### To do / In progress
 - [ ] UI Widgets
