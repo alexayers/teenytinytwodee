@@ -58,4 +58,5 @@ Everything is organized around the concept of a  `screen` a screen has the follo
 
 ### Credit
 
-I ported the Javascript ray caster from https://github.com/almushel/raycast-demo to Typescript and cleaned up the code to make it more reusable.
+I ported the Javascript ray caster from https://github.com/almushel/raycast-demo to Typescript and cleaned up the code to make it more reusable. Ported code is here: 
+src/lib/rendering/rayCaster
