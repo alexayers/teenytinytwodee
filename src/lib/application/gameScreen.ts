@@ -7,7 +7,7 @@ export interface GameScreen  {
     onExit(): void;
     logicLoop(): void;
     renderLoop(): void;
-    keyboard(keyCode: number): void;
+    keyboard(): void;
     mouseClick(x: number, y: number, mouseButton: MouseButton): void;
     mouseMove(x: number, y : number): void;
 }

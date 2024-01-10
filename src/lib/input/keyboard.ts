@@ -1,4 +1,4 @@
-
+import {GlobalState} from "../application/globalState";
 
 
 export enum KeyboardInput {
@@ -107,4 +107,8 @@ export function keyCodeToAlpha(keyCode: number) : string {
             return "";
 
     }
+}
+
+export function isKeyDown(keyCode: number) : boolean {
+    return GlobalState.getState(`KEY_${keyCode}`);
 }

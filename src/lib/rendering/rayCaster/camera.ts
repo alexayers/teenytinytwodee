@@ -31,6 +31,10 @@ export class Camera {
         let worldMap : WorldMap = WorldMap.getInstance();
         let gameEntity : GameEntity = worldMap.getPosition(Math.floor(this._xPos + moveX),Math.floor(this._yPos));
 
+        if (!gameEntity) {
+            return;
+        }
+
         if (gameEntity.hasComponent("floor")) {
             this._xPos += moveX;
         }

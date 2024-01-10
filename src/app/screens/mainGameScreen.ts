@@ -14,7 +14,7 @@ import {DoorComponent} from "../../lib/ecs/components/doorComponent";
 import {Camera} from "../../lib/rendering/rayCaster/camera";
 import {VelocityComponent} from "../../lib/ecs/components/velocityComponent";
 import {CameraComponent} from "../../lib/ecs/components/cameraComponent";
-import {KeyboardInput} from "../../lib/input/keyboard";
+import {isKeyDown, KeyboardInput} from "../../lib/input/keyboard";
 import {GlobalState} from "../../lib/application/globalState";
 import {InteractionComponent} from "../../lib/ecs/components/interactionComponent";
 import {ScreenChangeEvent} from "../../lib/gameEvent/screenChangeEvent";
@@ -27,7 +27,7 @@ import {RayCastRenderSystem} from "../../lib/ecs/system/render/rayCastRenderSyst
 
 export class MainGameScreen implements GameScreen {
 
-    private _moveSpeed: number = 0.225;
+    private _moveSpeed: number = 0.065;
     private _gameSystems: Array<GameSystem> = [];
     private _renderSystems: Array<GameRenderSystem> = [];
     private _gameEntityRegistry: GameEntityRegistry = GameEntityRegistry.getInstance();
@@ -108,7 +108,7 @@ export class MainGameScreen implements GameScreen {
         this._gameEntityRegistry.registerSingleton(player);
     }
 
-    keyboard(keyCode: number): void {
+    keyboard(): void {
         let moveSpeed : number = this._moveSpeed * Performance.deltaTime;
         let moveX : number = 0;
         let moveY : number = 0;
@@ -124,23 +124,23 @@ export class MainGameScreen implements GameScreen {
             moveY += camera.yDir;
         }
 
-        if (GlobalState.getState(`KEY_${KeyboardInput.DOWN}`)) {
+        if (isKeyDown(KeyboardInput.DOWN)) {
             moveX -= camera.xDir;
             moveY -= camera.yDir;
         }
-        if (GlobalState.getState(`KEY_${KeyboardInput.LEFT}`)) {
+        if (isKeyDown(KeyboardInput.LEFT)) {
             velocity.rotateLeft = true;
         }
 
-        if (GlobalState.getState(`KEY_${KeyboardInput.RIGHT}`)) {
+        if (isKeyDown(KeyboardInput.RIGHT)) {
             velocity.rotateRight = true;
         }
 
-        if (GlobalState.getState(`KEY_${KeyboardInput.SPACE}`)) {
+        if (isKeyDown(KeyboardInput.SPACE)) {
             player.addComponent(new InteractionComponent())
         }
 
-        if (GlobalState.getState(`KEY_${KeyboardInput.ESCAPE}`)) {
+        if (isKeyDown(KeyboardInput.ESCAPE)) {
             GameEventBus.publish(new ScreenChangeEvent("computer"));
         }
 
@@ -155,6 +155,7 @@ export class MainGameScreen implements GameScreen {
 
     logicLoop(): void {
 
+        this.keyboard();
         let player : GameEntity = this._gameEntityRegistry.getSingleton("player");
 
         this._gameSystems.forEach((gameSystem: GameSystem) => {
