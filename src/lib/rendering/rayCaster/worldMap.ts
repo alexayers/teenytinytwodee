@@ -47,11 +47,12 @@ export class WorldMap {
 
         for (let i: number = 0; i < WorldMap._instance._worldWidth * WorldMap._instance._worldHeight; i++) {
             WorldMap._instance._doorOffsets.push(0);
-            WorldMap._instance._doorStates.push(0);
+            WorldMap._instance._doorStates.push(DoorState.CLOSED);
         }
+
     }
 
-    getPosition(x: number, y: number): GameEntity {
+    getEntityAtPosition(x: number, y: number): GameEntity {
         return this._gameMap[(x + (y * this._worldWidth))];
     }
 
@@ -60,19 +61,19 @@ export class WorldMap {
     }
 
     getDoorState(x: number, y: number): number {
-        return this._doorStates[x * (y * this._worldWidth)];
+        return this._doorStates[x + (y * this._worldWidth)];
     }
 
     getDoorOffset(x: number, y: number): number {
-        return this._doorOffsets[x * (y * this._worldWidth)];
+        return this._doorOffsets[x + (y * this._worldWidth)];
     }
 
     setDoorState(x: number, y: number, state: number): void {
-        this._doorStates[x * (y * this._worldWidth)] = state;
+        this._doorStates[x + (y * this._worldWidth)] = state;
     }
 
     setDoorOffset(x: number, y: number, offset: number): void {
-        this._doorOffsets[x * (y * this._worldWidth)] = offset;
+        this._doorOffsets[x + (y * this._worldWidth)] = offset;
     }
 
     moveDoors(): void {
@@ -80,7 +81,7 @@ export class WorldMap {
         for (let y: number = 0; y < this._worldHeight; y++) {
             for (let x: number = 0; x < this._worldWidth; x++) {
 
-                let gameEntity: GameEntity = this.getPosition(x, y);
+                let gameEntity: GameEntity = this.getEntityAtPosition(x, y);
 
                 if (gameEntity.hasComponent("door")) { //Standard door
                     if (this.getDoorState(x, y) == DoorState.OPENING) {//Open doors

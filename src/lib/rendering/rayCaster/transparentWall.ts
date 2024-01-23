@@ -6,9 +6,9 @@ export class TransparentWall {
     private _xMap: number;
     private _yMap: number;
     private _side: number;
-    private _xScreen;
+    private _xScreen : number;
     private _camera: Camera
-    private _cameraXCoords;
+    private _cameraXCoords : Array<number>;
 
     constructor(camera:Camera, xMap : number, yMap : number, side: number, xScreen : number, cameraXCoords: Array<number>) {
 
@@ -80,4 +80,52 @@ export class TransparentWall {
          */
     }
 
+
+    get xMap(): number {
+        return this._xMap;
+    }
+
+    set xMap(value: number) {
+        this._xMap = value;
+    }
+
+    get yMap(): number {
+        return this._yMap;
+    }
+
+    set yMap(value: number) {
+        this._yMap = value;
+    }
+
+    get side(): number {
+        return this._side;
+    }
+
+    set side(value: number) {
+        this._side = value;
+    }
+
+    get xScreen(): number {
+        return this._xScreen;
+    }
+
+    set xScreen(value: number) {
+        this._xScreen = value;
+    }
+
+    get camera(): Camera {
+        return this._camera;
+    }
+
+    set camera(value: Camera) {
+        this._camera = value;
+    }
+
+    get cameraXCoords(): Array<number> {
+        return this._cameraXCoords;
+    }
+
+    set cameraXCoords(value: Array<number>) {
+        this._cameraXCoords = value;
+    }
 }

@@ -28,7 +28,7 @@ export class InteractionSystem implements GameSystem {
         let checkMapX2: number = Math.floor(camera.xPos + camera.xDir * 2);
         let checkMapY2: number = Math.floor(camera.yPos + camera.yDir * 2);
 
-        let gameEntity: GameEntity = this._worldMap.getPosition(checkMapX, checkMapY);
+        let gameEntity: GameEntity = this._worldMap.getEntityAtPosition(checkMapX, checkMapY);
 
         if (gameEntity.hasComponent("door") ||
             gameEntity.hasComponent("pushWall") &&
@@ -37,7 +37,7 @@ export class InteractionSystem implements GameSystem {
             return;
         }
 
-        gameEntity = this._worldMap.getPosition(checkMapX2, checkMapY2);
+        gameEntity = this._worldMap.getEntityAtPosition(checkMapX2, checkMapY2);
 
         if (gameEntity.hasComponent("door") ||
             gameEntity.hasComponent("pushWall") &&
@@ -46,7 +46,7 @@ export class InteractionSystem implements GameSystem {
             return;
         }
 
-        gameEntity = this._worldMap.getPosition(checkMapX, checkMapY);
+        gameEntity = this._worldMap.getEntityAtPosition(checkMapX, checkMapY);
 
         if (gameEntity.hasComponent("door") ||
             gameEntity.hasComponent("pushWall") &&
@@ -55,7 +55,7 @@ export class InteractionSystem implements GameSystem {
             return;
         }
 
-        gameEntity = this._worldMap.getPosition(checkMapX2, checkMapY2);
+        gameEntity = this._worldMap.getEntityAtPosition(checkMapX2, checkMapY2);
 
         if (gameEntity.hasComponent("door") ||
             gameEntity.hasComponent("pushWall") &&
@@ -64,7 +64,7 @@ export class InteractionSystem implements GameSystem {
             return;
         }
 
-        gameEntity = this._worldMap.getPosition(Math.floor(camera.xPos), Math.floor(camera.yPos));
+        gameEntity = this._worldMap.getEntityAtPosition(Math.floor(camera.xPos), Math.floor(camera.yPos));
 
         if (gameEntity.hasComponent("door")) { //Avoid getting stuck in doors
             this._worldMap.setDoorState(Math.floor(camera.xPos), Math.floor(camera.yPos), DoorState.OPENING);

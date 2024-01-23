@@ -29,9 +29,15 @@ export class Camera {
     move(moveX: number, moveY: number): void {
 
         let worldMap : WorldMap = WorldMap.getInstance();
-        let gameEntity : GameEntity = worldMap.getPosition(Math.floor(this._xPos + moveX),Math.floor(this._yPos));
+        let gameEntity : GameEntity = worldMap.getEntityAtPosition(Math.floor(this._xPos + moveX),Math.floor(this._yPos));
 
         if (!gameEntity) {
+            return;
+        }
+
+
+
+        if (this.npcPresent()) {
             return;
         }
 
@@ -47,7 +53,7 @@ export class Camera {
             }
         }
 
-        gameEntity = worldMap.getPosition(Math.floor(this._xPos),Math.floor(this._yPos + moveY))
+        gameEntity = worldMap.getEntityAtPosition(Math.floor(this._xPos),Math.floor(this._yPos + moveY))
 
         if (gameEntity.hasComponent("floor")) {
             this._yPos += moveY;
@@ -61,6 +67,10 @@ export class Camera {
             }
         }
 
+    }
+
+    private npcPresent() {
+        return false;
     }
 
     rotate(angle: number): void {

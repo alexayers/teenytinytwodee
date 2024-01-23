@@ -15,8 +15,8 @@ export class RayCaster {
 
     private _cameraXCoords: Array<number> = [];
     private _zBuffer: Array<number> = [];
-    private _tpWalls: any = [];
-
+    private _transparentWall: Array<TransparentWall> = [];
+    private _worldMap: WorldMap = WorldMap.getInstance();
 
     constructor() {
         for (let x: number = 0; x < Renderer.getCanvasWidth(); x++) {
@@ -27,18 +27,14 @@ export class RayCaster {
 
     drawWall(camera: Camera, x: number): void {
 
-        let worldMap: WorldMap = WorldMap.getInstance();
+
         let rayDirX: number = camera.xDir + camera.xPlane * this._cameraXCoords[x];
         let rayDirY: number = camera.yDir + camera.yPlane * this._cameraXCoords[x];
         let mapX: number = Math.floor(camera.xPos);
         let mapY: number = Math.floor(camera.yPos);
-        let sideDistX: number;
-        let sideDistY: number;
         let deltaDistX: number = Math.abs(1 / rayDirX);
         let deltaDistY: number = Math.abs(1 / rayDirY);
         let perpWallDist: number;
-        let stepX: number;
-        let stepY: number;
         let hit: number = 0;
         let side: number;
         let wallXOffset: number = 0;
@@ -46,6 +42,187 @@ export class RayCaster {
         let wallX: number;
         let rayTex: number;
         let gameEntity: GameEntity;
+
+        let { stepX, stepY, sideDistX, sideDistY } = this.initializeRayStepDistances(camera, Math.floor(camera.xPos), Math.floor(camera.yPos), rayDirX, rayDirY);
+
+        while (hit == 0) {
+
+            if (sideDistX < sideDistY) {
+                sideDistX += deltaDistX;
+                mapX += stepX;
+                side = 0;
+            } else {
+                sideDistY += deltaDistY;
+                mapY += stepY;
+                side = 1;
+            }
+
+            gameEntity = this._worldMap.getEntityAtPosition(mapX, mapY);
+
+            if (!gameEntity.hasComponent("floor")) {
+                if (gameEntity.hasComponent("door") &&
+                    this._worldMap.getDoorState(mapX, mapY) != DoorState.OPEN) {
+                    hit = 1;
+                    if (side == 1) {
+                        wallYOffset = 0.5 * stepY;
+                        perpWallDist = (mapY - camera.yPos + wallYOffset + (1 - stepY) / 2) / rayDirY;
+                        wallX = camera.xPos + perpWallDist * rayDirX;
+                        wallX -= Math.floor(wallX);
+
+                        if (sideDistY - (deltaDistY / 2) < sideDistX) {
+                            if (1.0 - wallX <= this._worldMap.getDoorOffset(mapX, mapY)) {
+                                hit = 0;
+                                wallYOffset = 0;
+                            } else {
+                                hit = 1;
+                            }
+
+                        } else {
+                            mapX += stepX;
+                            side = 0;
+                            rayTex = 4;
+                            wallYOffset = 0;
+                        }
+                    } else {
+                        wallXOffset = 0.5 * stepX;
+                        perpWallDist = (mapX - camera.xPos + wallXOffset + (1 - stepX) / 2) / rayDirX;
+                        wallX = camera.yPos + perpWallDist * rayDirY;
+                        wallX -= Math.floor(wallX);
+                        if (sideDistX - (deltaDistX / 2) < sideDistY) {
+                            if (1.0 - wallX < this._worldMap.getDoorOffset(mapX, mapY)) {
+                                hit = 0;
+                                wallXOffset = 0;
+                            } else {
+                                hit = 1;
+                            }
+                        } else {
+                            mapY += stepY;
+                            side = 1;
+                            rayTex = 4;
+                            wallXOffset = 0;
+                        }
+                    }
+                } else if (gameEntity.hasComponent("pushWall") && this._worldMap.getDoorState(mapX, mapY) != DoorState.OPEN) {
+                    if (side == 1 && sideDistY - (deltaDistY * (1 - this._worldMap.getDoorOffset(mapX, mapY))) < sideDistX) {
+                        hit = 1;
+                        wallYOffset = this._worldMap.getDoorOffset(mapX, mapY) * stepY;
+                    } else if (side == 0 && sideDistX - (deltaDistX * (1 - this._worldMap.getDoorOffset(mapX, mapY))) < sideDistY) {
+                        hit = 1;
+                        wallXOffset = this._worldMap.getDoorOffset(mapX, mapY) * stepX;
+                    }
+                } else if (gameEntity.hasComponent("transparent")) {
+                    if (side == 1) {
+                        if (sideDistY - (deltaDistY / 2) < sideDistX) {
+                            let wallDefined: boolean = false;
+                            for (let i: number = 0; i < this._transparentWall.length; i++) {
+                                if (this._transparentWall[i].xMap == mapX && this._transparentWall[i].yMap == mapY) {
+                                    this._transparentWall[i].xScreen = x;
+                                    wallDefined = true;
+                                    break;
+                                }
+                            }
+
+                            if (!wallDefined) {
+                                let tpWall: TransparentWall = new TransparentWall(camera, mapX, mapY, side, x, this._cameraXCoords);
+                                this._transparentWall.push(tpWall);
+                            }
+                        }
+                    } else {
+                        if (sideDistX - (deltaDistX / 2) < sideDistY) {
+                            let wallDefined: boolean = false;
+                            for (let i: number = 0; i < this._transparentWall.length; i++) {
+                                if (this._transparentWall[i].xMap == mapX && this._transparentWall[i].yMap == mapY) {
+                                    this._transparentWall[i].xScreen = x;
+                                    wallDefined = true;
+                                    break;
+                                }
+                            }
+                            if (!wallDefined) {
+                                let tpWall: TransparentWall = new TransparentWall(camera, mapX, mapY, side, x, this._cameraXCoords);
+                                this._transparentWall.push(tpWall);
+                            }
+                        }
+                    }
+                } else if (!gameEntity.hasComponent("door")
+                    && !gameEntity.hasComponent("pushWall")) {
+
+                    let adjacentGameEntityUp: GameEntity = this._worldMap.getEntityAtPosition(mapX, mapY - stepY);
+                    let adjacentGameEntityAcross: GameEntity = this._worldMap.getEntityAtPosition(mapX - stepX, mapY)
+
+                    if (side == 1 && adjacentGameEntityUp.hasComponent("door")) {
+                        rayTex = 4;
+                    } else if (side == 0 && adjacentGameEntityAcross.hasComponent("door")) {
+                        rayTex = 4;
+                    }
+
+                    hit = 1;
+                }
+            }
+        }
+
+        perpWallDist = this.calculatePerpWall(side, mapX, mapY, camera, wallXOffset, wallYOffset, stepX, stepY, rayDirX, rayDirY);
+        this._zBuffer[x] = perpWallDist;
+
+        let lineHeight: number = Math.round(Renderer.getCanvasHeight() / perpWallDist);
+        let drawStart: number = -lineHeight / 2 + Math.round(Renderer.getCanvasHeight() / 2);
+
+        if (side == 0) {
+            wallX = camera.yPos + perpWallDist * rayDirY;
+        } else if (side == 1) {
+            wallX = camera.xPos + perpWallDist * rayDirX;
+        }
+
+        wallX -= Math.floor(wallX);
+
+        if (gameEntity.hasComponent("door")) {
+            wallX += this._worldMap.getDoorOffset(mapX, mapY);
+        }
+
+        // Swap texture out for door frame
+        if (rayTex == 4) {
+            gameEntity = GameEntityRegistry.getInstance().getSingleton("doorFrame");
+        }
+
+
+        this.renderWall(gameEntity, wallX, side, rayDirX, rayDirY, drawStart, lineHeight, x);
+        this.renderShadows(perpWallDist, x, drawStart, lineHeight);
+    }
+
+    renderWall(gameEntity: GameEntity, wallX: number, side: number, rayDirX: number, rayDirY: number, drawStart: number, lineHeight: number, x: number) {
+        let sprite: SpriteComponent = gameEntity.getComponent("sprite") as SpriteComponent
+        let wallTex: Sprite = sprite.sprite;
+
+        let texX: number = Math.floor(wallX * wallTex.image.width);
+
+
+
+        if (side == 0 && rayDirX > 0) {
+            texX = wallTex.image.width - texX - 1;
+        } else if (side == 1 && rayDirY < 0) {
+            texX = wallTex.image.width - texX - 1;
+        }
+
+
+
+        Renderer.renderClippedImage(wallTex.image,
+            texX,
+            0,
+            1,
+            wallTex.image.height,
+            x,
+            drawStart,
+            1,
+            lineHeight);
+
+    }
+
+     private initializeRayStepDistances(camera: Camera, mapX: number, mapY: number, rayDirX: number, rayDirY: number): { stepX: number, stepY: number, sideDistX: number, sideDistY: number } {
+        let deltaDistX: number = Math.abs(1 / rayDirX);
+        let deltaDistY: number = Math.abs(1 / rayDirY);
+        let sideDistX: number;
+        let sideDistY: number;
+        let stepX: number;
+        let stepY: number;
 
         if (rayDirX < 0) {
             stepX = -1;
@@ -62,149 +239,7 @@ export class RayCaster {
             sideDistY = (mapY + 1.0 - camera.yPos) * deltaDistY;
         }
 
-        while (hit == 0) {
-
-            if (sideDistX < sideDistY) {
-                sideDistX += deltaDistX;
-                mapX += stepX;
-                side = 0;
-            } else {
-                sideDistY += deltaDistY;
-                mapY += stepY;
-                side = 1;
-            }
-
-            gameEntity = worldMap.getPosition(mapX, mapY);
-
-            if (!gameEntity.hasComponent("floor")) {
-                if (gameEntity.hasComponent("door") && worldMap.getDoorState(mapX, mapY) != DoorState.OPEN) {
-                    hit = 1;
-                    if (side == 1) {
-                        wallYOffset = 0.5 * stepY;
-                        perpWallDist = (mapY - camera.yPos + wallYOffset + (1 - stepY) / 2) / rayDirY;
-                        wallX = camera.xPos + perpWallDist * rayDirX;
-                        wallX -= Math.floor(wallX);
-                        if (sideDistY - (deltaDistY / 2) < sideDistX) {
-                            if (1.0 - wallX <= worldMap.getDoorOffset(mapX, mapY)) {
-                                hit = 0;
-                                wallYOffset = 0;
-                            }
-                        } else {
-                            mapX += stepX;
-                            side = 0;
-                            rayTex = 4;
-                            wallYOffset = 0;
-                        }
-                    } else {
-                        wallXOffset = 0.5 * stepX;
-                        perpWallDist = (mapX - camera.xPos + wallXOffset + (1 - stepX) / 2) / rayDirX;
-                        wallX = camera.yPos + perpWallDist * rayDirY;
-                        wallX -= Math.floor(wallX);
-                        if (sideDistX - (deltaDistX / 2) < sideDistY) {
-                            if (1.0 - wallX < worldMap.getDoorOffset(mapX, mapY)) {
-                                hit = 0;
-                                wallXOffset = 0;
-                            }
-                        } else {
-                            mapY += stepY;
-                            side = 1;
-                            rayTex = 4;
-                            wallXOffset = 0;
-                        }
-                    }
-                } else if (gameEntity.hasComponent("pushWall") && worldMap.getDoorState(mapX, mapY) != DoorState.OPEN) {
-                    if (side == 1 && sideDistY - (deltaDistY * (1 - worldMap.getDoorOffset(mapX, mapY))) < sideDistX) {
-                        hit = 1;
-                        wallYOffset = worldMap.getDoorOffset(mapX, mapY) * stepY;
-                    } else if (side == 0 && sideDistX - (deltaDistX * (1 - worldMap.getDoorOffset(mapX, mapY))) < sideDistY) {
-                        hit = 1;
-                        wallXOffset = worldMap.getDoorOffset(mapX, mapY) * stepX;
-                    }
-                } else if (gameEntity.hasComponent("transparentWall")) {
-                    if (side == 1) {
-                        if (sideDistY - (deltaDistY / 2) < sideDistX) {
-                            let wallDefined: boolean = false;
-                            for (let i: number = 0; i < this._tpWalls.length; i++) {
-                                if (this._tpWalls[i].mapX == mapX && this._tpWalls[i].mapY == mapY) {
-                                    this._tpWalls[i].screenX.push(x);
-                                    wallDefined = true;
-                                    break;
-                                }
-                            }
-                            if (!wallDefined) {
-                                let tpWall: TransparentWall = new TransparentWall(camera, mapX, mapY, side, x, this._cameraXCoords);
-                                this._tpWalls.push(tpWall);
-                            }
-                        }
-                    } else {
-                        if (sideDistX - (deltaDistX / 2) < sideDistY) {
-                            let wallDefined: boolean = false;
-                            for (let i: number = 0; i < this._tpWalls.length; i++) {
-                                if (this._tpWalls[i].mapX == mapX && this._tpWalls[i].mapY == mapY) {
-                                    this._tpWalls[i].screenX.push(x);
-                                    wallDefined = true;
-                                    break;
-                                }
-                            }
-                            if (!wallDefined) {
-                                let tpWall: TransparentWall = new TransparentWall(camera, mapX, mapY, side, x, this._cameraXCoords);
-                                this._tpWalls.push(tpWall);
-                            }
-                        }
-                    }
-                } else if (!gameEntity.hasComponent("door") && !gameEntity.hasComponent("pushWall")) {
-
-                    let adjacentGameEntityUp: GameEntity = worldMap.getPosition(mapX, mapY - stepY);
-                    let adjacentGameEntityAcross: GameEntity = worldMap.getPosition(mapX - stepX, mapY)
-
-                    if (side == 1 && adjacentGameEntityUp.hasComponent("door")) {
-                        rayTex = 4;
-                    } else if (side == 0 && adjacentGameEntityAcross.hasComponent("door")) {
-                        rayTex = 4;
-                    }
-
-                    hit = 1;
-                }
-            }
-        }
-
-        perpWallDist = this.calculatePerpWall(side, mapX, mapY, camera, wallXOffset, wallYOffset, stepX, stepY, rayDirX, rayDirY);
-
-        let lineHeight: number = Math.round(Renderer.getCanvasHeight() / perpWallDist);
-        let drawStart: number = -lineHeight / 2 + Math.round(Renderer.getCanvasHeight() / 2);
-
-        if (side == 0) {
-            wallX = camera.yPos + perpWallDist * rayDirY;
-        } else if (side == 1 || side == 2) {
-            wallX = camera.xPos + perpWallDist * rayDirX;
-        }
-
-        wallX -= Math.floor(wallX);
-
-        if (gameEntity.hasComponent("door")) {
-            wallX += worldMap.getDoorOffset(mapX, mapY);
-        }
-
-        // Swap texture out for door frame
-        if (rayTex == 4) {
-            gameEntity = GameEntityRegistry.getInstance().getSingleton("doorFrame");
-        }
-
-        let sprite: SpriteComponent = gameEntity.getComponent("sprite") as SpriteComponent
-        let wallTex: Sprite = sprite.sprite;
-
-
-        let texX: number = Math.floor(wallX * wallTex.image.width);
-        if (side == 0 && rayDirX > 0) {
-            texX = wallTex.image.width - texX - 1;
-        } else if (side == 1 && rayDirY < 0) {
-            texX = wallTex.image.width - texX - 1;
-        }
-
-        Renderer.renderClippedImage(wallTex.image, texX, 0, 1, wallTex.image.height, x, drawStart, 1, lineHeight);
-        this.renderShadows(perpWallDist, x, drawStart, lineHeight);
-
-        this._zBuffer[x] = perpWallDist;
+        return { stepX, stepY, sideDistX, sideDistY };
     }
 
     renderShadows(perpWallDist: number, x: number, drawStart: number, lineHeight: number): void {
@@ -260,8 +295,8 @@ export class RayCaster {
         this.combSort(order, spriteDistance);
 
         let tp: number = -1;
-        if (this._tpWalls.length > 0) {
-            tp = this._tpWalls.length - 1;
+        if (this._transparentWall.length > 0) {
+            tp = this._transparentWall.length - 1;
         }
 
         for (let i: number = 0; i < sprites.length; i++) {
@@ -275,9 +310,9 @@ export class RayCaster {
 
             if (transformY > 0) {
                 for (tp; tp >= 0; tp--) {
-                    let tpDist: number = ((camera.xPos - this._tpWalls[tp].mapX) * (camera.xPos - this._tpWalls[tp].mapX)) + ((camera.yPos - this._tpWalls[tp].mapY) * (camera.yPos - this._tpWalls[tp].mapY));
+                    let tpDist: number = ((camera.xPos - this._transparentWall[tp].xMap) * (camera.xPos - this._transparentWall[tp].xMap)) + ((camera.yPos - this._transparentWall[tp].yMap) * (camera.yPos - this._transparentWall[tp].yMap));
                     if (spriteDistance[i] < tpDist) {
-                        this._tpWalls[tp].draw();
+                        this._transparentWall[tp].draw();
                     } else {
                         break;
                     }
@@ -341,9 +376,9 @@ export class RayCaster {
         }
 
         for (tp; tp >= 0; tp--) {
-            this._tpWalls[tp].draw();
+            this._transparentWall[tp].draw();
         }
-        this._tpWalls.length = 0;
+        this._transparentWall.length = 0;
     }
 
     drawSkyBox(groundColor: Color, skyColor: Color): void {
