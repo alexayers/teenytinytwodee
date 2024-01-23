@@ -24,6 +24,7 @@ import {CameraSystem} from "../../lib/ecs/system/entity/cameraSystem";
 import {InteractionSystem} from "../../lib/ecs/system/entity/interactionSystem";
 import {PickUpSystem} from "../../lib/ecs/system/entity/pickUpSystem";
 import {RayCastRenderSystem} from "../../lib/ecs/system/render/rayCastRenderSystem";
+import {Color} from "../../lib/primatives/color";
 
 export class MainGameScreen implements GameScreen {
 
@@ -81,7 +82,7 @@ export class MainGameScreen implements GameScreen {
         this._gameEntityRegistry.registerSingleton(doorFrame);
 
         let grid: Array<number> = [
-            1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, // no format
             1, 0, 0, 0, 1, 0, 0, 0, 0, 1,
             1, 0, 0, 0, 3, 0, 0, 0, 0, 1,
             1, 0, 0, 0, 1, 0, 0, 0, 0, 1,
@@ -98,7 +99,17 @@ export class MainGameScreen implements GameScreen {
         translationTable.set(1, wall);
         translationTable.set(0, floor);
 
-        worldMap.loadMap(grid,translationTable);
+
+        worldMap.loadMap({
+            floorColor: new Color(74, 67, 57),
+            grid: grid,
+            height: 10,
+            lightRange: 8,
+            skyColor: new Color(40, 40, 40),
+            translationTable: translationTable,
+            width: 10
+
+        });
 
         let player : GameEntity = new GameEntityBuilder("player")
             .addComponent(new CameraComponent(new Camera(2, 2, 0, 1, 0.66)))

@@ -1,19 +1,24 @@
 import {Color} from "../primatives/color";
 
-export function RGBtoHex(red: number, green: number, blue: number) : string{
+export class ColorUtils {
 
-    try {
-        return "#" + componentToHex(red) + componentToHex(green) + componentToHex(blue);
-    } catch (e) {
-        return "#ffffff";
+    static RGBtoHex(red: number, green: number, blue: number) : string{
+
+        try {
+            return "#" + ColorUtils.componentToHex(red) + ColorUtils.componentToHex(green) + ColorUtils.componentToHex(blue);
+        } catch (e) {
+            return "#ffffff";
+        }
     }
+
+    static componentToHex(c: number) {
+        let hex : string = c.toString(16);
+        return hex.length == 1 ? "0" + hex : hex;
+    }
+
 }
 
 
-function componentToHex(c: number) {
-    let hex : string = c.toString(16);
-    return hex.length == 1 ? "0" + hex : hex;
-}
 
 
 export class Colors {

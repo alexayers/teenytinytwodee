@@ -1,8 +1,8 @@
 import {Color} from "../primatives/color";
-import {RGBtoHex} from "../utils/colorUtils";
 import {ConfigurationManager} from "../application/configuration";
 import {logger, LogType} from "../utils/loggerUtils";
 import {Font} from "../rendering/font";
+import {ColorUtils} from "../utils/colorUtils";
 
 
 export class Renderer {
@@ -55,7 +55,7 @@ export class Renderer {
     }
 
     static setColor(color: Color): void {
-        Renderer._ctx.fillStyle = RGBtoHex(color.getRed(), color.getGreen(), color.getBlue());
+        Renderer._ctx.fillStyle = ColorUtils.RGBtoHex(color.red, color.green, color.blue);
     }
 
     public static resize() : void {
@@ -126,13 +126,13 @@ export class Renderer {
         }
 
         if (font.color) {
-            Renderer._ctx.fillStyle = RGBtoHex(font.color.getRed(),font.color.getGreen(),font.color.getBlue());
+            Renderer._ctx.fillStyle = ColorUtils.RGBtoHex(font.color.red,font.color.green,font.color.blue);
         } else {
             Renderer._ctx.fillStyle = "#000000";
         }
 
-        if (font.color && font.color.getAlpha()) {
-            Renderer.setAlpha(font.color.getAlpha());
+        if (font.color && font.color.alpha) {
+            Renderer.setAlpha(font.color.alpha);
         }
 
         Renderer._ctx.fillText(msg, x, y);
@@ -171,7 +171,7 @@ export class Renderer {
         Renderer._ctx.beginPath();
 
         Renderer.setColor(color);
-        Renderer.setAlpha(color.getAlpha());
+        Renderer.setAlpha(color.alpha);
 
         Renderer._ctx.arc(x, y, radius, 0, 2 * Math.PI, false)
 
@@ -186,7 +186,7 @@ export class Renderer {
         Renderer._ctx.moveTo(x1, y1);
         Renderer._ctx.lineTo(x2, y2);
         Renderer._ctx.lineWidth = width;
-        Renderer._ctx.strokeStyle = RGBtoHex(color.getRed(), color.getGreen(), color.getBlue());
+        Renderer._ctx.strokeStyle = ColorUtils.RGBtoHex(color.red, color.green, color.blue);
         Renderer._ctx.stroke();
     }
     static rect(x: number, y: number, width: number, height: number, color: Color) : void {
@@ -194,7 +194,7 @@ export class Renderer {
         Renderer._ctx.beginPath();
 
         Renderer.setColor(color);
-        Renderer.setAlpha(color.getAlpha());
+        Renderer.setAlpha(color.alpha);
 
         Renderer._ctx.rect(
             x,
@@ -242,5 +242,25 @@ export class Renderer {
 
     static rotate(angle: number) {
         Renderer._ctx.rotate(-(angle - Math.PI * 0.5));
+    }
+
+    static rectGradient(x: number, y: number, width: number, height: number, startColor: Color, endColor: Color) {
+
+        // Create a vertical linear gradient
+        let gradient = Renderer._ctx.createLinearGradient(x, y, width, height);
+        gradient.addColorStop(0, startColor.toString());
+        gradient.addColorStop(1, endColor.toString());
+
+        // Use the gradient to fill the rectangle
+        Renderer._ctx.fillStyle = gradient;
+        Renderer._ctx.fillRect(x, y, width, height);
+    }
+
+    static createImageData(canvasWidth: number, canvasHeight: number) : ImageData {
+        return Renderer._ctx.createImageData(canvasWidth, canvasHeight);
+    }
+
+    static putImageData(imageData: ImageData, x: number, y: number) {
+        Renderer._ctx.putImageData(imageData, x,y);
     }
 }

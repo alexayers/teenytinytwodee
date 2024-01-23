@@ -1,8 +1,8 @@
-import {rotateVector} from "../../utils/mathUtils";
 import {WorldMap} from "./worldMap";
 import {GameEntity} from "../../ecs/gameEntity";
 import {DoorComponent} from "../../ecs/components/doorComponent";
 import {Point} from "../../primatives/point";
+import {MathUtils} from "../../utils/mathUtils";
 
 
 export class Camera {
@@ -22,8 +22,8 @@ export class Camera {
         this._xDir = xDir;
         this._yDir = yDir;
         this._fov = fov;
-        this._xPlane = rotateVector(this._xDir, this._yDir, -Math.PI / 2).x * fov;
-        this._yPlane = rotateVector(this._xDir, this._yDir, -Math.PI / 2).y * fov;
+        this._xPlane = MathUtils.rotateVector(this._xDir, this._yDir, -Math.PI / 2).x * fov;
+        this._yPlane = MathUtils.rotateVector(this._xDir, this._yDir, -Math.PI / 2).y * fov;
     }
 
     move(moveX: number, moveY: number): void {
@@ -74,11 +74,11 @@ export class Camera {
     }
 
     rotate(angle: number): void {
-        let rDir: Point = rotateVector(this._xDir, this._yDir, angle);
+        let rDir: Point = MathUtils.rotateVector(this._xDir, this._yDir, angle);
         this._xDir = rDir.x;
         this._yDir = rDir.y;
 
-        let rPlane: Point = rotateVector(this._xPlane, this._yPlane, angle);
+        let rPlane: Point = MathUtils.rotateVector(this._xPlane, this._yPlane, angle);
         this._xPlane = rPlane.x;
         this._yPlane = rPlane.y;
     }

@@ -1,3 +1,4 @@
+import {ColorUtils} from "../utils/colorUtils";
 
 
 export class Color {
@@ -13,35 +14,42 @@ export class Color {
         this._blue = blue;
     }
 
-    public setRed(red: number) : void {
-        this._red = red;
-    }
 
-    public getRed() : number {
+    get red(): number {
         return this._red;
     }
 
-    public setGreen(green:number) : void {
-        this._green = green;
+    set red(value: number) {
+        this._red = value;
     }
 
-    public getGreen() : number {
+    get green(): number {
         return this._green;
     }
 
-    public setBlue(blue:number): void {
-        this._blue = blue;
+    set green(value: number) {
+        this._green = value;
     }
 
-    public getBlue() : number {
+    get blue(): number {
         return this._blue;
     }
 
-    public setAlpha(alpha: number) : void {
-        this._alpha = alpha;
+    set blue(value: number) {
+        this._blue = value;
     }
 
-    public getAlpha() : number {
+    get alpha(): number {
         return this._alpha;
     }
+
+    set alpha(value: number) {
+        this._alpha = value;
+    }
+
+    public toString() : string {
+        return ColorUtils.RGBtoHex(this._red, this._green, this._blue);
+    }
+
+
 }

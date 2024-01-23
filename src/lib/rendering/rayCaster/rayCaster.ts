@@ -9,6 +9,7 @@ import {Sprite} from "../sprite";
 import {PositionComponent} from "../../ecs/components/positionComponent";
 import {DistanceComponent} from "../../ecs/components/distanceComponent";
 import {Color} from "../../primatives/color";
+import {Colors} from "../../utils/colorUtils";
 
 
 export class RayCaster {
@@ -17,12 +18,18 @@ export class RayCaster {
     private _zBuffer: Array<number> = [];
     private _transparentWall: Array<TransparentWall> = [];
     private _worldMap: WorldMap = WorldMap.getInstance();
+    private _floor:HTMLImageElement;
+    private _ceiling:HTMLImageElement;
 
-    constructor() {
+
+    constructor(floor:HTMLImageElement, ceiling:HTMLImageElement) {
         for (let x: number = 0; x < Renderer.getCanvasWidth(); x++) {
             let cameraX: number = 2 * x / Renderer.getCanvasWidth() - 1;
             this._cameraXCoords.push(cameraX);
         }
+
+       this._floor = floor;
+        this._ceiling = ceiling;
     }
 
     drawWall(camera: Camera, x: number): void {
@@ -43,7 +50,12 @@ export class RayCaster {
         let rayTex: number;
         let gameEntity: GameEntity;
 
-        let { stepX, stepY, sideDistX, sideDistY } = this.initializeRayStepDistances(camera, Math.floor(camera.xPos), Math.floor(camera.yPos), rayDirX, rayDirY);
+        let {
+            stepX,
+            stepY,
+            sideDistX,
+            sideDistY
+        } = this.initializeRayStepDistances(camera, Math.floor(camera.xPos), Math.floor(camera.yPos), rayDirX, rayDirY);
 
         while (hit == 0) {
 
@@ -195,13 +207,11 @@ export class RayCaster {
         let texX: number = Math.floor(wallX * wallTex.image.width);
 
 
-
         if (side == 0 && rayDirX > 0) {
             texX = wallTex.image.width - texX - 1;
         } else if (side == 1 && rayDirY < 0) {
             texX = wallTex.image.width - texX - 1;
         }
-
 
 
         Renderer.renderClippedImage(wallTex.image,
@@ -216,7 +226,12 @@ export class RayCaster {
 
     }
 
-     private initializeRayStepDistances(camera: Camera, mapX: number, mapY: number, rayDirX: number, rayDirY: number): { stepX: number, stepY: number, sideDistX: number, sideDistY: number } {
+    private initializeRayStepDistances(camera: Camera, mapX: number, mapY: number, rayDirX: number, rayDirY: number): {
+        stepX: number,
+        stepY: number,
+        sideDistX: number,
+        sideDistY: number
+    } {
         let deltaDistX: number = Math.abs(1 / rayDirX);
         let deltaDistY: number = Math.abs(1 / rayDirY);
         let sideDistX: number;
@@ -239,11 +254,11 @@ export class RayCaster {
             sideDistY = (mapY + 1.0 - camera.yPos) * deltaDistY;
         }
 
-        return { stepX, stepY, sideDistX, sideDistY };
+        return {stepX, stepY, sideDistX, sideDistY};
     }
 
     renderShadows(perpWallDist: number, x: number, drawStart: number, lineHeight: number): void {
-        let lightRange: number = 6;
+        let lightRange: number = this._worldMap.worldDefinition.lightRange;
         let calculatedAlpha: number = Math.max((perpWallDist + 0.002) / lightRange, 0);
 
 
@@ -381,13 +396,118 @@ export class RayCaster {
         this._transparentWall.length = 0;
     }
 
-    drawSkyBox(groundColor: Color, skyColor: Color): void {
+    drawSkyBox(camera: Camera): void {
+
+
+
+/*
+        // Ground
+        Renderer.rectGradient(
+            0,
+            Renderer.getCanvasHeight() / 2,
+            Renderer.getCanvasWidth(),
+            Renderer.getCanvasHeight(),
+            this._worldMap.worldDefinition.floorColor,
+            Colors.BLACK(),
+        );
+
+         */
+
+        this.renderFloorsAndCeiling(
+            camera.xDir,
+            camera.yDir,
+            camera.xPlane,
+            camera.yPlane,
+            camera.xPos,
+                camera.yPos,
+                32,
+                32
+        );
 
         // Sky
-        Renderer.rect(0, 0, Renderer.getCanvasWidth(), Renderer.getCanvasHeight() / 2, skyColor);
+        Renderer.rectGradient(
+            0,
+            0,
+            Renderer.getCanvasWidth(),
+            Renderer.getCanvasHeight() / 2,
+            Colors.BLACK(),
+            this._worldMap.worldDefinition.skyColor,
+        );
 
-        // Ground
-        Renderer.rect(0, Renderer.getCanvasHeight() / 2, Renderer.getCanvasWidth(), Renderer.getCanvasHeight(), groundColor);
+    }
+
+    preRenderTexture(texture: HTMLImageElement, texWidth: number, texHeight: number): ImageData {
+        let offscreenCanvas = document.createElement('canvas');
+        offscreenCanvas.width = texWidth;
+        offscreenCanvas.height = texHeight;
+        let offCtx = offscreenCanvas.getContext('2d');
+        offCtx.drawImage(texture, 0, 0);
+        return offCtx.getImageData(0, 0, texWidth, texHeight);
+    }
+
+    renderFloorsAndCeiling(dirX: number, dirY: number, planeX: number, planeY: number, posX: number, posY: number, texWidth: number, texHeight: number) {
+
+        let floor = this.preRenderTexture(this._floor,32,32);
+        let ceiling = this.preRenderTexture(this._ceiling,32,32);
+
+        let canvasWidth = Renderer.getCanvasWidth();
+        let canvasHeight = Renderer.getCanvasHeight();
+
+        let imageData = Renderer.createImageData(canvasWidth, canvasHeight);
+        let buffer = new Uint32Array(imageData.data.buffer);
+
+
+        for (let y = 0; y < Renderer.getCanvasHeight(); y++) {
+            let rayDirX0 = dirX - planeX;
+            let rayDirY0 = dirY - planeY;
+            let rayDirX1 = dirX + planeX;
+            let rayDirY1 = dirY + planeY;
+
+            let p = y - Renderer.getCanvasHeight() / 2;
+            let posZ = 0.5 * Renderer.getCanvasHeight();
+            let rowDistance = posZ / p;
+
+            let floorStepX = rowDistance * (rayDirX1 - rayDirX0) / Renderer.getCanvasWidth();
+            let floorStepY = rowDistance * (rayDirY1 - rayDirY0) / Renderer.getCanvasWidth();
+
+            let floorX = posX + rowDistance * rayDirX0;
+            let floorY = posY + rowDistance * rayDirY0;
+
+            for (let x = 0; x < Renderer.getCanvasWidth(); x++) {
+                let cellX = Math.floor(floorX);
+                let cellY = Math.floor(floorY);
+
+                let tx = Math.floor(texWidth * (floorX - cellX)) & (texWidth - 1);
+                let ty = Math.floor(texHeight * (floorY - cellY)) & (texHeight - 1);
+
+                floorX += floorStepX;
+                floorY += floorStepY;
+
+                let floorColor = this.getColorFromTexture(floor,tx, ty, texWidth);
+                buffer[y * canvasWidth + x] = floorColor;
+
+                let ceilingColor = this.getColorFromTexture(ceiling, tx, ty, texWidth);
+                buffer[(canvasHeight - y - 1) * canvasWidth + x] = ceilingColor;
+            }
+        }
+
+        Renderer.putImageData(imageData, 0, 0);
+    }
+
+    getColorFromTexture(textureData: ImageData, tx: number, ty: number, texWidth: number): number {
+        let baseIndex = (ty * texWidth + tx) * 4; // 4 for RGBA
+        let data = textureData.data;
+        return (data[baseIndex + 0] << 24) | (data[baseIndex + 1] << 16) | (data[baseIndex + 2] << 8) | data[baseIndex + 3]; // Assuming RGBA
+    }
+
+    private getTextureColor(texture: ImageData, tx: number, ty: number, texWidth: number): number {
+        let base = (ty * texWidth + tx) * 4;
+        let data = texture.data;
+        return (data[base + 0] << 16) | (data[base + 1] << 8) | data[base + 2]; // Assuming RGBA
+    }
+
+    private darkenColor(color: number): number {
+        return (color >> 1) & 0x7F7F7F; // Make the color a bit darker
     }
 
     combSort(order: Array<number>, dist: Array<number>): void {

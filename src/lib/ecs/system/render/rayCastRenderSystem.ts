@@ -10,9 +10,21 @@ import {Performance} from "../../../rendering/rayCaster/performance";
 
 export class RayCastRenderSystem implements GameRenderSystem {
 
-    private _rayCaster: RayCaster = new RayCaster();
+    private _rayCaster: RayCaster;
     private _worldMap : WorldMap = WorldMap.getInstance();
     private _gameEntityRegistry: GameEntityRegistry = GameEntityRegistry.getInstance();
+    private _floor:HTMLImageElement;
+    private _ceiling:HTMLImageElement;
+
+    constructor() {
+        this._floor = new Image();
+        this._floor.src = require("../../../../assets/wall.png")
+
+        this._ceiling = new Image();
+        this._ceiling.src = require("../../../../assets/door.png")
+
+        this._rayCaster = new RayCaster(this._floor,this._ceiling);
+    }
 
     process(): void {
 
@@ -23,7 +35,7 @@ export class RayCastRenderSystem implements GameRenderSystem {
 
         let camera: CameraComponent = player.getComponent("camera") as CameraComponent;
 
-        this._rayCaster.drawSkyBox(new Color(74, 67, 57),new Color(40, 40, 40));
+        this._rayCaster.drawSkyBox(camera.camera);
 
         for(let x : number = 0; x < Renderer.getCanvasWidth(); x++) {
             this._rayCaster.drawWall(camera.camera, x);

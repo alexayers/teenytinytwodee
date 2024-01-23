@@ -1,9 +1,9 @@
-
-
 import {Performance} from "./performance";
 import {GameEntity} from "../../ecs/gameEntity";
 import {DoorComponent} from "../../ecs/components/doorComponent";
 import {PushWallComponent} from "../../ecs/components/pushWallComponent";
+import {Sprite} from "../sprite";
+import {Color} from "../../primatives/color";
 
 export enum DoorState {
     CLOSED = 0,
@@ -12,14 +12,27 @@ export enum DoorState {
     CLOSING = 3
 }
 
+
+interface WorldDefinition {
+    grid: Array<number>
+    items?: Array<GameEntity>
+    npcs?: Array<GameEntity>
+    skyBox?: Sprite;
+    skyColor: Color
+    floorColor: Color
+    translationTable: Map<number, GameEntity>
+    lightRange: number
+    width: number
+    height: number
+}
+
 export class WorldMap {
 
     private static _instance: WorldMap = null;
     private _gameMap: Array<GameEntity>;
-    private _worldWidth: number = 24;
-    private _worldHeight: number = 24;
     private _doorOffsets: Array<number> = [];
     private _doorStates: Array<number> = [];
+    private _worldDefinition: WorldDefinition;
 
     static getInstance(): WorldMap {
 
@@ -30,22 +43,22 @@ export class WorldMap {
         return WorldMap._instance;
     }
 
-    loadMap(grid: Array<number>,translationTable: Map<number, GameEntity>): void {
+    loadMap(worldDefinition: WorldDefinition): void {
 
-        this._worldHeight = 10;
-        this._worldWidth = 10;
+        this._worldDefinition = worldDefinition;
         this._gameMap = [];
 
 
-        for (let y: number = 0; y < this._worldHeight; y++) {
-            for (let x: number = 0; x < this._worldWidth; x++) {
-                let pos: number = x + (y * this._worldWidth);
-                let value: number = grid[pos];
-                this._gameMap[pos] = translationTable.get(value);
+
+        for (let y: number = 0; y < this._worldDefinition.height; y++) {
+            for (let x: number = 0; x < this._worldDefinition.width; x++) {
+                let pos: number = x + (y * this._worldDefinition.width);
+                let value: number = worldDefinition.grid[pos];
+                this._gameMap[pos] = worldDefinition.translationTable.get(value);
             }
         }
 
-        for (let i: number = 0; i < WorldMap._instance._worldWidth * WorldMap._instance._worldHeight; i++) {
+        for (let i: number = 0; i < worldDefinition.width * worldDefinition.height; i++) {
             WorldMap._instance._doorOffsets.push(0);
             WorldMap._instance._doorStates.push(DoorState.CLOSED);
         }
@@ -53,7 +66,7 @@ export class WorldMap {
     }
 
     getEntityAtPosition(x: number, y: number): GameEntity {
-        return this._gameMap[(x + (y * this._worldWidth))];
+        return this._gameMap[(x + (y * this._worldDefinition.width))];
     }
 
     get gameMap() {
@@ -61,25 +74,25 @@ export class WorldMap {
     }
 
     getDoorState(x: number, y: number): number {
-        return this._doorStates[x + (y * this._worldWidth)];
+        return this._doorStates[x + (y * this._worldDefinition.width)];
     }
 
     getDoorOffset(x: number, y: number): number {
-        return this._doorOffsets[x + (y * this._worldWidth)];
+        return this._doorOffsets[x + (y * this._worldDefinition.width)];
     }
 
     setDoorState(x: number, y: number, state: number): void {
-        this._doorStates[x + (y * this._worldWidth)] = state;
+        this._doorStates[x + (y * this._worldDefinition.width)] = state;
     }
 
     setDoorOffset(x: number, y: number, offset: number): void {
-        this._doorOffsets[x + (y * this._worldWidth)] = offset;
+        this._doorOffsets[x + (y * this._worldDefinition.width)] = offset;
     }
 
     moveDoors(): void {
 
-        for (let y: number = 0; y < this._worldHeight; y++) {
-            for (let x: number = 0; x < this._worldWidth; x++) {
+        for (let y: number = 0; y < this._worldDefinition.width; y++) {
+            for (let x: number = 0; x < this._worldDefinition.width; x++) {
 
                 let gameEntity: GameEntity = this.getEntityAtPosition(x, y);
 
@@ -131,6 +144,7 @@ export class WorldMap {
     }
 
 
-
-
+    get worldDefinition(): WorldDefinition {
+        return this._worldDefinition;
+    }
 }
