@@ -3,9 +3,9 @@ import {Renderer} from "../rendering/renderer";
 import {Colors} from "../utils/colorUtils";
 import {ButtonWidget, ButtonWidgetBuilder} from "../ui/buttonWidget";
 import {MouseButton} from "../input/mouse";
-import {isPointWithinQuad} from "../utils/mathUtils";
 import {LabelWidgetBuilder} from "../ui/labelWidget";
 import {PanelWidget} from "../ui/panelWidget";
+import {MathUtils} from "../utils/mathUtils";
 
 
 export class WindowWidget extends Widget {
@@ -82,7 +82,7 @@ export class WindowWidget extends Widget {
         this._widgets.forEach((widget:Widget)=> {
 
             if (widget instanceof ButtonWidget) {
-                if (isPointWithinQuad({
+                if (MathUtils.isPointWithinQuad({
                     x: x,
                     y: y
                 }, widget.x + this._x, widget.y + this._y + 30, widget.width, widget.height)) {
@@ -95,7 +95,7 @@ export class WindowWidget extends Widget {
                 let panelWidget : PanelWidget = widget as PanelWidget;
 
                 panelWidget.widgets.forEach((widget: Widget) => {
-                    if (isPointWithinQuad({
+                    if (MathUtils.isPointWithinQuad({
                         x: x,
                         y: y
                     }, widget.x + this._x, widget.y + this._y + 30, widget.width, widget.height)) {
@@ -118,7 +118,7 @@ export class WindowWidget extends Widget {
         this._widgets.forEach((widget: Widget)=> {
 
             if (widget instanceof ButtonWidget) {
-                if (isPointWithinQuad({
+                if (MathUtils.isPointWithinQuad({
                     x: x,
                     y: y
                 }, widget.x + this._x, widget.y + this._y + 30, widget.width, widget.height)) {
@@ -135,7 +135,7 @@ export class WindowWidget extends Widget {
                 let panelWidget : PanelWidget = widget as PanelWidget;
 
                 panelWidget.widgets.forEach((widget: Widget) => {
-                    if (isPointWithinQuad({
+                    if (MathUtils.isPointWithinQuad({
                         x: x,
                         y: y
                     }, widget.x + this._x, widget.y + this._y + 30, widget.width, widget.height)) {

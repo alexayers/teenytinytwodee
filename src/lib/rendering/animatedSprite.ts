@@ -7,9 +7,11 @@ export class AnimatedSprite {
     private _tick:number;
     private readonly _maxTicks:number;
     private _currentFrame: number;
-    private _frames:Array<Sprite>;
+    private _frames:Map<string,Array<HTMLImageElement>>;
     private _x: number;
     private _y: number;
+    private _currentAction: string;
+
 
     constructor(x: number, y: number, maxTicks: number = 16) {
 
@@ -18,7 +20,7 @@ export class AnimatedSprite {
         this._maxTicks = maxTicks;
         this._currentFrame = 0;
         this._tick = 0;
-        this._frames = [];
+        this._frames = new Map<string, Array<HTMLImageElement>>();
     }
 
 
@@ -38,13 +40,48 @@ export class AnimatedSprite {
         this._y = value;
     }
 
-    addSprite(sprite: Sprite) {
-        this._frames.push(sprite);
+
+    get tick(): number {
+        return this._tick;
+    }
+
+    set tick(value: number) {
+        this._tick = value;
+    }
+
+    get currentFrame(): number {
+        return this._currentFrame;
+    }
+
+    set currentFrame(value: number) {
+        this._currentFrame = value;
+    }
+
+    get frames(): Map<string, Array<HTMLImageElement>> {
+        return this._frames;
+    }
+
+    set frames(value: Map<string, Array<HTMLImageElement>>) {
+        this._frames = value;
+    }
+
+    get currentAction(): string {
+        return this._currentAction;
+    }
+
+    set currentAction(value: string) {
+
+        if (this._currentAction != value) {
+            this._currentAction = value;
+            this._tick = 0;
+            this._currentFrame = 0;
+        }
+
     }
 
     render() : void {
-        let sprite : Sprite = this._frames[this._currentFrame];
-        Renderer.renderImage(sprite.image,this._x,this._y,sprite.width,sprite.height);
+        let imageElement : HTMLImageElement = this._frames.get(this._currentAction)[this._currentFrame];
+        Renderer.renderImage(imageElement,this._x,this._y,imageElement.width,imageElement.height);
 
         this._tick++;
 
@@ -52,7 +89,7 @@ export class AnimatedSprite {
             this._tick = 0;
             this._currentFrame++;
 
-            if (this._currentFrame == this._frames.length) {
+            if (this._currentFrame == this._frames.get(this._currentAction).length) {
                 this._currentFrame = 0;
             }
         }

@@ -309,9 +309,9 @@ export class RayCaster {
 
         this.combSort(order, spriteDistance);
 
-        let tp: number = -1;
+        let transparentIdx: number = -1;
         if (this._transparentWall.length > 0) {
-            tp = this._transparentWall.length - 1;
+            transparentIdx = this._transparentWall.length - 1;
         }
 
         for (let i: number = 0; i < sprites.length; i++) {
@@ -324,10 +324,10 @@ export class RayCaster {
             let transformY: number = invDet * (-camera.yPlane * spriteX + camera.xPlane * spriteY);
 
             if (transformY > 0) {
-                for (tp; tp >= 0; tp--) {
-                    let tpDist: number = ((camera.xPos - this._transparentWall[tp].xMap) * (camera.xPos - this._transparentWall[tp].xMap)) + ((camera.yPos - this._transparentWall[tp].yMap) * (camera.yPos - this._transparentWall[tp].yMap));
+                for (transparentIdx; transparentIdx >= 0; transparentIdx--) {
+                    let tpDist: number = ((camera.xPos - this._transparentWall[transparentIdx].xMap) * (camera.xPos - this._transparentWall[transparentIdx].xMap)) + ((camera.yPos - this._transparentWall[transparentIdx].yMap) * (camera.yPos - this._transparentWall[transparentIdx].yMap));
                     if (spriteDistance[i] < tpDist) {
-                        this._transparentWall[tp].draw();
+                        this._transparentWall[transparentIdx].draw();
                     } else {
                         break;
                     }
@@ -390,8 +390,8 @@ export class RayCaster {
             }
         }
 
-        for (tp; tp >= 0; tp--) {
-            this._transparentWall[tp].draw();
+        for (transparentIdx; transparentIdx >= 0; transparentIdx--) {
+            this._transparentWall[transparentIdx].draw();
         }
         this._transparentWall.length = 0;
     }
@@ -424,6 +424,7 @@ export class RayCaster {
                 32
         );
 
+        /*
         // Sky
         Renderer.rectGradient(
             0,
@@ -434,6 +435,8 @@ export class RayCaster {
             this._worldMap.worldDefinition.skyColor,
         );
 
+
+         */
     }
 
     preRenderTexture(texture: HTMLImageElement, texWidth: number, texHeight: number): ImageData {
@@ -447,67 +450,84 @@ export class RayCaster {
 
     renderFloorsAndCeiling(dirX: number, dirY: number, planeX: number, planeY: number, posX: number, posY: number, texWidth: number, texHeight: number) {
 
-        let floor = this.preRenderTexture(this._floor,32,32);
-        let ceiling = this.preRenderTexture(this._ceiling,32,32);
+        let floor : ImageData = this.preRenderTexture(this._floor,32,32);
+        let ceiling: ImageData = this.preRenderTexture(this._ceiling,32,32);
 
-        let canvasWidth = Renderer.getCanvasWidth();
-        let canvasHeight = Renderer.getCanvasHeight();
+        let canvasWidth: number = Renderer.getCanvasWidth();
+        let canvasHeight: number = Renderer.getCanvasHeight();
 
-        let imageData = Renderer.createImageData(canvasWidth, canvasHeight);
-        let buffer = new Uint32Array(imageData.data.buffer);
+        let imageData: ImageData = Renderer.createImageData(canvasWidth, canvasHeight);
+        let buffer: Uint32Array = new Uint32Array(imageData.data.buffer);
 
 
-        for (let y = 0; y < Renderer.getCanvasHeight(); y++) {
-            let rayDirX0 = dirX - planeX;
-            let rayDirY0 = dirY - planeY;
-            let rayDirX1 = dirX + planeX;
-            let rayDirY1 = dirY + planeY;
+        for (let y: number = 0; y < Renderer.getCanvasHeight(); y++) {
+            let rayDirX0: number = dirX - planeX;
+            let rayDirY0: number = dirY - planeY;
+            let rayDirX1: number = dirX + planeX;
+            let rayDirY1: number = dirY + planeY;
 
-            let p = y - Renderer.getCanvasHeight() / 2;
-            let posZ = 0.5 * Renderer.getCanvasHeight();
-            let rowDistance = posZ / p;
+            let p: number = y - Renderer.getCanvasHeight() / 2;
+            let posZ: number = 0.5 * Renderer.getCanvasHeight();
+            let rowDistance: number = posZ / p;
 
-            let floorStepX = rowDistance * (rayDirX1 - rayDirX0) / Renderer.getCanvasWidth();
-            let floorStepY = rowDistance * (rayDirY1 - rayDirY0) / Renderer.getCanvasWidth();
+            let floorStepX: number = rowDistance * (rayDirX1 - rayDirX0) / Renderer.getCanvasWidth();
+            let floorStepY: number = rowDistance * (rayDirY1 - rayDirY0) / Renderer.getCanvasWidth();
 
-            let floorX = posX + rowDistance * rayDirX0;
-            let floorY = posY + rowDistance * rayDirY0;
+            let floorX: number = posX + rowDistance * rayDirX0;
+            let floorY: number = posY + rowDistance * rayDirY0;
 
-            for (let x = 0; x < Renderer.getCanvasWidth(); x++) {
-                let cellX = Math.floor(floorX);
-                let cellY = Math.floor(floorY);
+            for (let x: number = 0; x < Renderer.getCanvasWidth(); x++) {
+                let cellX: number = Math.floor(floorX);
+                let cellY: number = Math.floor(floorY);
 
-                let tx = Math.floor(texWidth * (floorX - cellX)) & (texWidth - 1);
-                let ty = Math.floor(texHeight * (floorY - cellY)) & (texHeight - 1);
+                let tx: number = Math.floor(texWidth * (floorX - cellX)) & (texWidth - 1);
+                let ty: number = Math.floor(texHeight * (floorY - cellY)) & (texHeight - 1);
 
                 floorX += floorStepX;
                 floorY += floorStepY;
 
-                let floorColor = this.getColorFromTexture(floor,tx, ty, texWidth);
+
+                let distance = this.calculateDistance(x, y, canvasWidth, canvasHeight) / Renderer.getCanvasHeight();
+
+
+                let floorColor : number = this.getColorFromTexture(floor,tx, ty, texWidth, distance);
                 buffer[y * canvasWidth + x] = floorColor;
 
-                let ceilingColor = this.getColorFromTexture(ceiling, tx, ty, texWidth);
-                buffer[(canvasHeight - y - 1) * canvasWidth + x] = ceilingColor;
+                let ceilingColor: number = this.getColorFromTexture(ceiling, tx, ty, texWidth, distance);
+                buffer[(canvasHeight - y - 1) * canvasWidth + x] =ceilingColor;
             }
         }
 
         Renderer.putImageData(imageData, 0, 0);
     }
 
-    getColorFromTexture(textureData: ImageData, tx: number, ty: number, texWidth: number): number {
-        let baseIndex = (ty * texWidth + tx) * 4; // 4 for RGBA
-        let data = textureData.data;
-        return (data[baseIndex + 0] << 24) | (data[baseIndex + 1] << 16) | (data[baseIndex + 2] << 8) | data[baseIndex + 3]; // Assuming RGBA
+    private calculateDistance(x: number, y: number, canvasWidth: number, canvasHeight: number): number {
+        // Example calculation - this may need to be adjusted based on your camera setup and desired effect
+        let dx = x - canvasWidth / 2;
+        let dy = y - canvasHeight / 2;
+        let distance = Math.sqrt(dx * dx + dy * dy); // Euclidean distance from the center of the screen
+        return distance;
     }
 
-    private getTextureColor(texture: ImageData, tx: number, ty: number, texWidth: number): number {
-        let base = (ty * texWidth + tx) * 4;
-        let data = texture.data;
-        return (data[base + 0] << 16) | (data[base + 1] << 8) | data[base + 2]; // Assuming RGBA
-    }
+    getColorFromTexture(textureData: ImageData, tx: number, ty: number, texWidth: number, distance: number): number {
+        let baseIndex: number = (ty * texWidth + tx) * 4; // 4 for RGBA
+        let data: Uint8ClampedArray = textureData.data;
 
-    private darkenColor(color: number): number {
-        return (color >> 1) & 0x7F7F7F; // Make the color a bit darker
+        // Extract RGBA components
+        let r: number = data[baseIndex + 0];
+        let g: number = data[baseIndex + 1];
+        let b: number = data[baseIndex + 2];
+        let a: number = data[baseIndex + 3];
+
+        // Apply distance-based attenuation to RGB components
+        // Assuming 'distance' is a value that increases with distance from the viewer
+        const attenuation = Math.max(1.0 - distance, 0); // 'someFactor' determines how quickly it darkens with distance
+        r *= attenuation;
+        g *= attenuation;
+        b *= attenuation;
+
+        // Combine back into an integer
+        return (r << 16) | (g << 8) | b | (a << 24);
     }
 
     combSort(order: Array<number>, dist: Array<number>): void {

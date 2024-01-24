@@ -81,7 +81,7 @@ export class MainGameScreen implements GameScreen {
 
         this._gameEntityRegistry.registerSingleton(doorFrame);
 
-        let grid: Array<number> = [
+        let wallGrid: Array<number> = [
             1, 1, 1, 1, 1, 1, 1, 1, 1, 1, // no format
             1, 0, 0, 0, 1, 0, 0, 0, 0, 1,
             1, 0, 0, 0, 3, 0, 0, 0, 0, 1,
@@ -93,20 +93,22 @@ export class MainGameScreen implements GameScreen {
             1, 0, 0, 0, 1, 0, 1, 0, 0, 1,
             1, 1, 1, 1, 1, 1, 1, 1, 1, 1];
 
-        let translationTable: Map<number, GameEntity> = new Map<number, GameEntity>();
 
-        translationTable.set(3, door);
-        translationTable.set(1, wall);
-        translationTable.set(0, floor);
+
+        let wallTranslationTable: Map<number, GameEntity> = new Map<number, GameEntity>();
+
+        wallTranslationTable.set(3, door);
+        wallTranslationTable.set(1, wall);
+        wallTranslationTable.set(0, floor);
 
 
         worldMap.loadMap({
             floorColor: new Color(74, 67, 57),
-            grid: grid,
+            wallGrid: wallGrid,
             height: 10,
             lightRange: 8,
             skyColor: new Color(40, 40, 40),
-            translationTable: translationTable,
+            wallTranslationTable: wallTranslationTable,
             width: 10
 
         });

@@ -1,9 +1,9 @@
 import {Widget} from "./widget";
 import {MouseButton} from "../input/mouse";
 import {WindowWidget} from "../ui/windowWidget";
-import {isPointWithinQuad} from "../utils/mathUtils";
 import {PanelWidget} from "../ui/panelWidget";
 import {TextBoxWidget} from "../ui/textBoxWidget";
+import {MathUtils} from "../utils/mathUtils";
 
 export class WidgetManager {
 
@@ -48,7 +48,7 @@ export class WidgetManager {
                 let panelWidget: PanelWidget = widget as PanelWidget;
 
                 panelWidget.widgets.forEach((widget: Widget) => {
-                    if (isPointWithinQuad({
+                    if (MathUtils.isPointWithinQuad({
                         x: x,
                         y: y
                     }, widget.x, widget.y, widget.width, widget.height)) {
@@ -87,7 +87,7 @@ export class WidgetManager {
                     let panelWidget: PanelWidget = widget as PanelWidget;
 
                     panelWidget.widgets.forEach((widget: Widget) => {
-                        if (isPointWithinQuad({
+                        if (MathUtils.isPointWithinQuad({
                             x: x,
                             y: y
                         }, widget.x, widget.y, widget.width, widget.height)) {
@@ -103,7 +103,7 @@ export class WidgetManager {
                     });
 
                 } else {
-                    if (isPointWithinQuad({x: x, y: y}, widget.x, widget.y, widget.width, widget.height))
+                    if (MathUtils.isPointWithinQuad({x: x, y: y}, widget.x, widget.y, widget.width, widget.height))
                         if (mouseButton == MouseButton.LEFT) {
                             if (widget.callBack != null) {
                                 widget.invoke();

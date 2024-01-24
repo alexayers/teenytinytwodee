@@ -14,13 +14,13 @@ export enum DoorState {
 
 
 interface WorldDefinition {
-    grid: Array<number>
+    wallGrid: Array<number>
     items?: Array<GameEntity>
     npcs?: Array<GameEntity>
     skyBox?: Sprite;
     skyColor: Color
     floorColor: Color
-    translationTable: Map<number, GameEntity>
+    wallTranslationTable: Map<number, GameEntity>
     lightRange: number
     width: number
     height: number
@@ -53,8 +53,8 @@ export class WorldMap {
         for (let y: number = 0; y < this._worldDefinition.height; y++) {
             for (let x: number = 0; x < this._worldDefinition.width; x++) {
                 let pos: number = x + (y * this._worldDefinition.width);
-                let value: number = worldDefinition.grid[pos];
-                this._gameMap[pos] = worldDefinition.translationTable.get(value);
+                let value: number = worldDefinition.wallGrid[pos];
+                this._gameMap[pos] = worldDefinition.wallTranslationTable.get(value);
             }
         }
 

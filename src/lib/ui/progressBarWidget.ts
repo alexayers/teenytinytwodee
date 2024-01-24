@@ -1,7 +1,8 @@
 import {Widget} from "../ui/widget";
 import {Color} from "../primatives/color";
 import {Renderer} from "../rendering/renderer";
-import {calculateXPercentOfY} from "../utils/mathUtils";
+import {MathUtils} from "../utils/mathUtils";
+
 
 
 export class ProgressBarWidget extends Widget {
@@ -73,7 +74,7 @@ export class ProgressBarWidget extends Widget {
         Renderer.rect(this._x + offsetX, this._y + offsetY, this._width, this._height, this._backgroundColor);
 
 
-        let newWidth :number = calculateXPercentOfY(this._percent, this.width);
+        let newWidth :number = MathUtils.calculateXPercentOfY(this._percent, this.width);
 
         Renderer.rect(this._x + offsetX, this._y + offsetY, newWidth, this._height, this._progressBarColor);
     }
