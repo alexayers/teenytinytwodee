@@ -35,8 +35,6 @@ export class Camera {
             return;
         }
 
-
-
         if (this.npcPresent()) {
             return;
         }

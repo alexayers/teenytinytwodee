@@ -1,5 +1,6 @@
-import {GameComponent} from "../gameComponent";
-import {Sprite} from "../../rendering/sprite";
+import {GameComponent} from "../../gameComponent";
+import {Sprite} from "../../../rendering/sprite";
+
 
 export class SpriteComponent implements GameComponent {
 

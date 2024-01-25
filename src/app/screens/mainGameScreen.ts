@@ -8,12 +8,10 @@ import {WorldMap} from "../../lib/rendering/rayCaster/worldMap";
 import {GameEntityBuilder} from "../../lib/ecs/gameEntityBuilder";
 import {WallComponent} from "../../lib/ecs/components/wallComponent";
 import {GameEntity} from "../../lib/ecs/gameEntity";
-import {SpriteComponent} from "../../lib/ecs/components/spriteComponent";
 import {FloorComponent} from "../../lib/ecs/components/floorComponent";
 import {DoorComponent} from "../../lib/ecs/components/doorComponent";
 import {Camera} from "../../lib/rendering/rayCaster/camera";
 import {VelocityComponent} from "../../lib/ecs/components/velocityComponent";
-import {CameraComponent} from "../../lib/ecs/components/cameraComponent";
 import {isKeyDown, KeyboardInput} from "../../lib/input/keyboard";
 import {GlobalState} from "../../lib/application/globalState";
 import {InteractionComponent} from "../../lib/ecs/components/interactionComponent";
@@ -25,6 +23,15 @@ import {InteractionSystem} from "../../lib/ecs/system/entity/interactionSystem";
 import {PickUpSystem} from "../../lib/ecs/system/entity/pickUpSystem";
 import {RayCastRenderSystem} from "../../lib/ecs/system/render/rayCastRenderSystem";
 import {Color} from "../../lib/primatives/color";
+import {Game} from "../main";
+import {ItemComponent} from "../../lib/ecs/components/itemComponent";
+import {PositionComponent} from "../../lib/ecs/components/positionComponent";
+import {DistanceComponent} from "../../lib/ecs/components/distanceComponent";
+import {AnimatedSpriteComponent} from "../../lib/ecs/components/rendering/animatedSpriteComponent";
+import {AnimatedSprite} from "../../lib/rendering/animatedSprite";
+import {SpriteComponent} from "../../lib/ecs/components/rendering/spriteComponent";
+import {CameraComponent} from "../../lib/ecs/components/rendering/cameraComponent";
+
 
 export class MainGameScreen implements GameScreen {
 
@@ -109,7 +116,8 @@ export class MainGameScreen implements GameScreen {
             lightRange: 8,
             skyColor: new Color(40, 40, 40),
             wallTranslationTable: wallTranslationTable,
-            width: 10
+            width: 10,
+            items: this.buildItems()
 
         });
 
@@ -119,6 +127,34 @@ export class MainGameScreen implements GameScreen {
             .build();
 
         this._gameEntityRegistry.registerSingleton(player);
+    }
+
+    buildItems() : Array<GameEntity> {
+        let gameEntities : Array<GameEntity> =[];
+
+        gameEntities.push(new GameEntityBuilder("flowers")
+            .addComponent(new ItemComponent())
+            .addComponent(new DistanceComponent())
+            .addComponent(new PositionComponent(3,3))
+            .addComponent(new SpriteComponent(new Sprite(32,32, require("../../assets/flowers.png"))))
+            .build()
+        )
+
+        return gameEntities;
+    }
+
+    buildNpcs() : Array<GameEntity> {
+        let gameEntities : Array<GameEntity> =[];
+
+        gameEntities.push(new GameEntityBuilder("skeleton")
+            .addComponent(new ItemComponent())
+            .addComponent(new DistanceComponent())
+            .addComponent(new PositionComponent(3,3))
+            //.addComponent(new AnimatedSpriteComponent(new AnimatedSprite()))
+            .build()
+        )
+
+        return gameEntities;
     }
 
     keyboard(): void {

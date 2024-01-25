@@ -1,5 +1,5 @@
-import {GameComponent} from "../gameComponent";
-import {Camera} from "../../rendering/rayCaster/camera";
+import {GameComponent} from "../../gameComponent";
+import {Camera} from "../../../rendering/rayCaster/camera";
 
 
 export class CameraComponent implements GameComponent {

@@ -3,14 +3,17 @@ import {Camera} from "./camera";
 import {DoorState, WorldMap} from "./worldMap";
 import {TransparentWall} from "./transparentWall";
 import {GameEntity} from "../../ecs/gameEntity";
-import {SpriteComponent} from "../../ecs/components/spriteComponent";
 import {GameEntityRegistry} from "../../registries/gameEntityRegistry";
 import {Sprite} from "../sprite";
 import {PositionComponent} from "../../ecs/components/positionComponent";
 import {DistanceComponent} from "../../ecs/components/distanceComponent";
 import {Color} from "../../primatives/color";
-import {Colors} from "../../utils/colorUtils";
+import {SpriteComponent} from "../../ecs/components/rendering/spriteComponent";
 
+enum WallSide {
+    X_SIDE,
+    Y_SIDE
+}
 
 export class RayCaster {
 
@@ -18,31 +21,36 @@ export class RayCaster {
     private _zBuffer: Array<number> = [];
     private _transparentWall: Array<TransparentWall> = [];
     private _worldMap: WorldMap = WorldMap.getInstance();
-    private _floor:HTMLImageElement;
-    private _ceiling:HTMLImageElement;
+    private _floor: HTMLImageElement;
+    private _ceiling: HTMLImageElement;
 
 
-    constructor(floor:HTMLImageElement, ceiling:HTMLImageElement) {
+    constructor(floor: HTMLImageElement, ceiling: HTMLImageElement) {
         for (let x: number = 0; x < Renderer.getCanvasWidth(); x++) {
             let cameraX: number = 2 * x / Renderer.getCanvasWidth() - 1;
             this._cameraXCoords.push(cameraX);
         }
 
-       this._floor = floor;
+        this._floor = floor;
         this._ceiling = ceiling;
     }
 
+    // Function to draw a wall from the perspective of the camera at a given screen X-coordinate
     drawWall(camera: Camera, x: number): void {
-
-
+        // Calculate the direction of the ray from the camera's position and direction
         let rayDirX: number = camera.xDir + camera.xPlane * this._cameraXCoords[x];
         let rayDirY: number = camera.yDir + camera.yPlane * this._cameraXCoords[x];
+
+        // Determine the map grid cell the camera is in
         let mapX: number = Math.floor(camera.xPos);
         let mapY: number = Math.floor(camera.yPos);
+
+        // Calculate the distance the ray travels between each x or y grid line
         let deltaDistX: number = Math.abs(1 / rayDirX);
         let deltaDistY: number = Math.abs(1 / rayDirY);
+
         let perpWallDist: number;
-        let hit: number = 0;
+        let hasHitWall: boolean = false;
         let side: number;
         let wallXOffset: number = 0;
         let wallYOffset: number = 0;
@@ -50,6 +58,7 @@ export class RayCaster {
         let rayTex: number;
         let gameEntity: GameEntity;
 
+        // Initialize step and side distances for ray traversal
         let {
             stepX,
             stepY,
@@ -57,25 +66,28 @@ export class RayCaster {
             sideDistY
         } = this.initializeRayStepDistances(camera, Math.floor(camera.xPos), Math.floor(camera.yPos), rayDirX, rayDirY);
 
-        while (hit == 0) {
+        // Loop until a wall hit is detected
+        while (!hasHitWall) {
 
+            // Determine whether to step in the x or y direction
             if (sideDistX < sideDistY) {
                 sideDistX += deltaDistX;
                 mapX += stepX;
-                side = 0;
+                side = WallSide.X_SIDE;
             } else {
                 sideDistY += deltaDistY;
                 mapY += stepY;
-                side = 1;
+                side = WallSide.Y_SIDE;
             }
 
+            // Get the game entity at the new map position
             gameEntity = this._worldMap.getEntityAtPosition(mapX, mapY);
 
             if (!gameEntity.hasComponent("floor")) {
                 if (gameEntity.hasComponent("door") &&
                     this._worldMap.getDoorState(mapX, mapY) != DoorState.OPEN) {
-                    hit = 1;
-                    if (side == 1) {
+                    hasHitWall = true;
+                    if (side == WallSide.Y_SIDE) {
                         wallYOffset = 0.5 * stepY;
                         perpWallDist = (mapY - camera.yPos + wallYOffset + (1 - stepY) / 2) / rayDirY;
                         wallX = camera.xPos + perpWallDist * rayDirX;
@@ -83,15 +95,15 @@ export class RayCaster {
 
                         if (sideDistY - (deltaDistY / 2) < sideDistX) {
                             if (1.0 - wallX <= this._worldMap.getDoorOffset(mapX, mapY)) {
-                                hit = 0;
+                                hasHitWall = false;
                                 wallYOffset = 0;
                             } else {
-                                hit = 1;
+                                hasHitWall = true;
                             }
 
                         } else {
                             mapX += stepX;
-                            side = 0;
+                            side = WallSide.X_SIDE;
                             rayTex = 4;
                             wallYOffset = 0;
                         }
@@ -102,57 +114,34 @@ export class RayCaster {
                         wallX -= Math.floor(wallX);
                         if (sideDistX - (deltaDistX / 2) < sideDistY) {
                             if (1.0 - wallX < this._worldMap.getDoorOffset(mapX, mapY)) {
-                                hit = 0;
+                                hasHitWall = false;
                                 wallXOffset = 0;
                             } else {
-                                hit = 1;
+                                hasHitWall = true;
                             }
                         } else {
                             mapY += stepY;
-                            side = 1;
+                            side = WallSide.Y_SIDE;
                             rayTex = 4;
                             wallXOffset = 0;
                         }
                     }
                 } else if (gameEntity.hasComponent("pushWall") && this._worldMap.getDoorState(mapX, mapY) != DoorState.OPEN) {
-                    if (side == 1 && sideDistY - (deltaDistY * (1 - this._worldMap.getDoorOffset(mapX, mapY))) < sideDistX) {
-                        hit = 1;
+                    if (side == WallSide.Y_SIDE && sideDistY - (deltaDistY * (1 - this._worldMap.getDoorOffset(mapX, mapY))) < sideDistX) {
+                        hasHitWall = true;
                         wallYOffset = this._worldMap.getDoorOffset(mapX, mapY) * stepY;
-                    } else if (side == 0 && sideDistX - (deltaDistX * (1 - this._worldMap.getDoorOffset(mapX, mapY))) < sideDistY) {
-                        hit = 1;
+                    } else if (side == WallSide.X_SIDE && sideDistX - (deltaDistX * (1 - this._worldMap.getDoorOffset(mapX, mapY))) < sideDistY) {
+                        hasHitWall = true;
                         wallXOffset = this._worldMap.getDoorOffset(mapX, mapY) * stepX;
                     }
                 } else if (gameEntity.hasComponent("transparent")) {
-                    if (side == 1) {
+                    if (side == WallSide.Y_SIDE) {
                         if (sideDistY - (deltaDistY / 2) < sideDistX) {
-                            let wallDefined: boolean = false;
-                            for (let i: number = 0; i < this._transparentWall.length; i++) {
-                                if (this._transparentWall[i].xMap == mapX && this._transparentWall[i].yMap == mapY) {
-                                    this._transparentWall[i].xScreen = x;
-                                    wallDefined = true;
-                                    break;
-                                }
-                            }
-
-                            if (!wallDefined) {
-                                let tpWall: TransparentWall = new TransparentWall(camera, mapX, mapY, side, x, this._cameraXCoords);
-                                this._transparentWall.push(tpWall);
-                            }
+                           this.processTransparentWall(camera,side, mapX, mapY, x);
                         }
                     } else {
                         if (sideDistX - (deltaDistX / 2) < sideDistY) {
-                            let wallDefined: boolean = false;
-                            for (let i: number = 0; i < this._transparentWall.length; i++) {
-                                if (this._transparentWall[i].xMap == mapX && this._transparentWall[i].yMap == mapY) {
-                                    this._transparentWall[i].xScreen = x;
-                                    wallDefined = true;
-                                    break;
-                                }
-                            }
-                            if (!wallDefined) {
-                                let tpWall: TransparentWall = new TransparentWall(camera, mapX, mapY, side, x, this._cameraXCoords);
-                                this._transparentWall.push(tpWall);
-                            }
+                            this.processTransparentWall(camera,side, mapX, mapY, x);
                         }
                     }
                 } else if (!gameEntity.hasComponent("door")
@@ -161,42 +150,50 @@ export class RayCaster {
                     let adjacentGameEntityUp: GameEntity = this._worldMap.getEntityAtPosition(mapX, mapY - stepY);
                     let adjacentGameEntityAcross: GameEntity = this._worldMap.getEntityAtPosition(mapX - stepX, mapY)
 
-                    if (side == 1 && adjacentGameEntityUp.hasComponent("door")) {
+                    if (side == WallSide.Y_SIDE && adjacentGameEntityUp.hasComponent("door")) {
                         rayTex = 4;
-                    } else if (side == 0 && adjacentGameEntityAcross.hasComponent("door")) {
+                    } else if (side == WallSide.X_SIDE && adjacentGameEntityAcross.hasComponent("door")) {
                         rayTex = 4;
                     }
 
-                    hit = 1;
+                    hasHitWall = true;
                 }
             }
         }
 
+        // Calculate perpendicular wall distance to avoid fisheye effect
         perpWallDist = this.calculatePerpWall(side, mapX, mapY, camera, wallXOffset, wallYOffset, stepX, stepY, rayDirX, rayDirY);
+
+        // Store the perpendicular distance for later use in Z-buffering
         this._zBuffer[x] = perpWallDist;
 
+        // Calculate the height of the wall slice to be drawn on screen
         let lineHeight: number = Math.round(Renderer.getCanvasHeight() / perpWallDist);
         let drawStart: number = -lineHeight / 2 + Math.round(Renderer.getCanvasHeight() / 2);
 
-        if (side == 0) {
+        // Calculate the exact position where the wall is hit
+        if (side == WallSide.X_SIDE) {
             wallX = camera.yPos + perpWallDist * rayDirY;
-        } else if (side == 1) {
+        } else if (side == WallSide.Y_SIDE) {
             wallX = camera.xPos + perpWallDist * rayDirX;
         }
 
         wallX -= Math.floor(wallX);
 
+        // Adjust the wall hit position if it's a door
         if (gameEntity.hasComponent("door")) {
             wallX += this._worldMap.getDoorOffset(mapX, mapY);
         }
 
-        // Swap texture out for door frame
+        // If the texture is a door frame, get the door frame entity
         if (rayTex == 4) {
             gameEntity = GameEntityRegistry.getInstance().getSingleton("doorFrame");
         }
 
-
+        // Render the wall slice on screen
         this.renderWall(gameEntity, wallX, side, rayDirX, rayDirY, drawStart, lineHeight, x);
+
+        // Render shadows based on the wall distance
         this.renderShadows(perpWallDist, x, drawStart, lineHeight);
     }
 
@@ -206,13 +203,11 @@ export class RayCaster {
 
         let texX: number = Math.floor(wallX * wallTex.image.width);
 
-
-        if (side == 0 && rayDirX > 0) {
+        if (side == WallSide.X_SIDE && rayDirX > 0) {
             texX = wallTex.image.width - texX - 1;
-        } else if (side == 1 && rayDirY < 0) {
+        } else if (side == WallSide.Y_SIDE && rayDirY < 0) {
             texX = wallTex.image.width - texX - 1;
         }
-
 
         Renderer.renderClippedImage(wallTex.image,
             texX,
@@ -232,13 +227,18 @@ export class RayCaster {
         sideDistX: number,
         sideDistY: number
     } {
+
+        // Calculate the absolute distance the ray travels between each x or y grid line.
         let deltaDistX: number = Math.abs(1 / rayDirX);
         let deltaDistY: number = Math.abs(1 / rayDirY);
+
         let sideDistX: number;
         let sideDistY: number;
         let stepX: number;
         let stepY: number;
 
+        // Determine the step direction and initial side distance in the X direction.
+        // If the ray is facing left, step left; if right, step right.
         if (rayDirX < 0) {
             stepX = -1;
             sideDistX = (camera.xPos - mapX) * deltaDistX;
@@ -254,6 +254,7 @@ export class RayCaster {
             sideDistY = (mapY + 1.0 - camera.yPos) * deltaDistY;
         }
 
+        // Return the calculated step and side distances for both X and Y directions.
         return {stepX, stepY, sideDistX, sideDistY};
     }
 
@@ -261,54 +262,62 @@ export class RayCaster {
         let lightRange: number = this._worldMap.worldDefinition.lightRange;
         let calculatedAlpha: number = Math.max((perpWallDist + 0.002) / lightRange, 0);
 
-
         Renderer.rect(
             x | 0, drawStart | 0, 1, lineHeight + 1, new Color(0, 0, 0, calculatedAlpha)
         );
     }
 
+    /**
+     * Calculates the perpendicular distance from the camera to the wall. This is essential
+     * for rendering the walls in a way that avoids the fisheye effect, which occurs if
+     * the direct distance to the wall is used.
+     *
+     * @param side Indicates which side of the wall the ray hit (x-side or y-side).
+     * @param mapX The x-coordinate of the map grid cell where the wall was hit.
+     * @param mapY The y-coordinate of the map grid cell where the wall was hit.
+     * @param camera The camera from which the ray is cast.
+     * @param wallXOffset The horizontal offset of the wall hit, used for walls that are not aligned with the grid.
+     * @param wallYOffset The vertical offset of the wall hit, used for walls that are not aligned with the grid.
+     * @param stepX The horizontal step direction of the ray (-1 for left, 1 for right).
+     * @param stepY The vertical step direction of the ray (-1 for down, 1 for up).
+     * @param rayDirX The x-component of the ray's direction.
+     * @param rayDirY The y-component of the ray's direction.
+     * @returns The perpendicular distance from the camera to the wall.
+     */
     calculatePerpWall(side: number, mapX: number, mapY: number, camera: Camera, wallXOffset: number, wallYOffset: number, stepX: number, stepY: number, rayDirX: number, rayDirY: number) {
         let perpWallDist: number = 0;
 
-        if (side == 0) {
-            perpWallDist = (mapX - camera.xPos + wallXOffset + (1 - stepX) / 2) / rayDirX;
-        } else if (side == 1) {
+        // Calculate distance for x-side wall hit
+        if (side == WallSide.X_SIDE) {
+            perpWallDist = (mapX - camera.xPos + wallXOffset + (1 - stepX) / 2) / rayDirX;// Calculate distance for y-side wall hit
+            // Calculate distance for y-side wall hit
+        } else if (side == WallSide.Y_SIDE) {
             perpWallDist = (mapY - camera.yPos + wallYOffset + (1 - stepY) / 2) / rayDirY;
         }
 
         return perpWallDist;
     }
 
+    /**
+     * Renders sprites and transparent walls in the game world based on the camera's perspective.
+     * @param {Camera} camera - The camera object used to determine the view perspective.
+     */
     drawSpritesAndTransparentWalls(camera: Camera): void {
 
-        let spriteDistance: Array<number> = [];
-        let order: Array<number> = [];
-        let gameEntityRegistry: GameEntityRegistry = GameEntityRegistry.getInstance();
+        // Arrays for storing distances of sprites from the camera, their order, and the game entities.
+        const gameEntities: Array<GameEntity> = this.getGameEntities();
 
-        let gameEntities: Array<GameEntity> = gameEntityRegistry.getEntities();
-        let sprites: Array<Sprite> = [];
+        // Calculate distance of each game entity from the camera and store their sprite components.
+        const { sprites, spriteDistance, order } = this.prepareSprites(gameEntities, camera);
 
-        for (let i: number = 0; i < gameEntities.length; i++) {
-            order[i] = i;
-
-            let gameEntity: GameEntity = gameEntities[i];
-            let sprite: SpriteComponent = gameEntity.getComponent("sprite") as SpriteComponent;
-            let position: PositionComponent = gameEntity.getComponent("position") as PositionComponent;
-            spriteDistance[i] = ((camera.xPos - position.x) * (camera.xPos - position.x)) + ((camera.yPos - position.y) * (camera.yPos - position.y));
-
-
-            let distance: DistanceComponent = gameEntity.getComponent("distance") as DistanceComponent;
-
-            distance.distance = spriteDistance[i];
-
-            sprite.sprite.x = position.x;
-            sprite.sprite.y = position.y;
-
-            sprites.push(sprite.sprite);
-        }
-
+        // Sort sprites based on their distance from the camera.
         this.combSort(order, spriteDistance);
 
+
+        this.renderSpritesAndWalls(sprites, spriteDistance, order, camera);
+    }
+
+    renderSpritesAndWalls(sprites: Array<Sprite>, spriteDistance: Array<number>, order: Array<number>, camera: Camera): void {
         let transparentIdx: number = -1;
         if (this._transparentWall.length > 0) {
             transparentIdx = this._transparentWall.length - 1;
@@ -316,6 +325,7 @@ export class RayCaster {
 
         for (let i: number = 0; i < sprites.length; i++) {
 
+            // Calculate sprite position relative to the camera.
             let spriteX: number = sprites[order[i]].x - camera.xPos;
             let spriteY: number = sprites[order[i]].y - camera.yPos;
 
@@ -323,6 +333,7 @@ export class RayCaster {
             let transformX: number = invDet * (camera.yDir * spriteX - camera.xDir * spriteY);
             let transformY: number = invDet * (-camera.yPlane * spriteX + camera.xPlane * spriteY);
 
+            // Render the sprite if it's in front of the camera.
             if (transformY > 0) {
                 for (transparentIdx; transparentIdx >= 0; transparentIdx--) {
                     let tpDist: number = ((camera.xPos - this._transparentWall[transparentIdx].xMap) * (camera.xPos - this._transparentWall[transparentIdx].xMap)) + ((camera.yPos - this._transparentWall[transparentIdx].yMap) * (camera.yPos - this._transparentWall[transparentIdx].yMap));
@@ -333,14 +344,15 @@ export class RayCaster {
                     }
                 }
 
+                // Calculate dimensions and positions for rendering the sprite.
                 let spriteHeight: number = Math.abs(Math.floor(Renderer.getCanvasHeight() / transformY));
                 let drawStartY: number = -spriteHeight / 2 + Math.round(Renderer.getCanvasHeight() / 2);
-
                 let spriteScreenX: number = Math.floor(Renderer.getCanvasWidth() / 2) * (1 + transformX / transformY);
                 let spriteWidth: number = Math.abs(Math.floor(Renderer.getCanvasHeight() / transformY));
                 let drawStartX: number = Math.floor(-spriteWidth / 2 + spriteScreenX);
                 let drawEndX: number = drawStartX + spriteWidth;
 
+                // Clipping calculations to render only the visible part of the sprite.
                 let clipStartX: number = drawStartX;
                 let clipEndX: number = drawEndX;
 
@@ -351,6 +363,7 @@ export class RayCaster {
                     drawEndX = Renderer.getCanvasWidth() + spriteWidth;
                 }
 
+                // Clip sprite rendering to the visible area.
                 for (let stripe: number = drawStartX; stripe <= drawEndX; stripe++) {
                     if (transformY > this._zBuffer[stripe]) {
                         if (stripe - clipStartX <= 1) {
@@ -362,6 +375,7 @@ export class RayCaster {
                     }
                 }
 
+                // Render clipped image of the sprite.
                 if (clipStartX != clipEndX && clipStartX < Renderer.getCanvasWidth() && clipEndX > 0) {
                     let scaleDelta: number = sprites[order[i]].width / spriteWidth;
                     let drawXStart: number = Math.floor((clipStartX - drawStartX) * scaleDelta);
@@ -376,16 +390,7 @@ export class RayCaster {
                     if (drawWidth < 0) {
                         drawWidth = 0;
                     }
-                    let drawAng: number = Math.atan2(spriteY, spriteX);
-                    //  sprites[order[i]].updateSpriteRotation(drawAng);
-
-
-                    Renderer.saveContext();
-                    Renderer.disableImageSmoothing()
-
                     Renderer.renderClippedImage(sprites[order[i]].image, drawXStart, 0, drawXEnd, sprites[order[i]].height, clipStartX, drawStartY, drawWidth, spriteHeight);
-
-                    Renderer.restoreContext();
                 }
             }
         }
@@ -396,22 +401,58 @@ export class RayCaster {
         this._transparentWall.length = 0;
     }
 
+    getGameEntities(): Array<GameEntity> {
+        let gameEntities: Array<GameEntity> = [];
+        if (this._worldMap.worldDefinition.items) {
+            gameEntities.push(...this._worldMap.worldDefinition.items);
+        }
+        if (this._worldMap.worldDefinition.npcs) {
+            gameEntities.push(...this._worldMap.worldDefinition.npcs);
+        }
+        return gameEntities;
+    }
+
+    prepareSprites(gameEntities: Array<GameEntity>, camera: Camera): { sprites: Array<Sprite>, spriteDistance: Array<number>, order: Array<number> } {
+        let spriteDistance: Array<number> = [];
+        let order: Array<number> = [];
+        let sprites: Array<Sprite> = [];
+
+        for (let i: number = 0; i < gameEntities.length; i++) {
+            order[i] = i;
+
+            let gameEntity: GameEntity = gameEntities[i];
+            let sprite: SpriteComponent = gameEntity.getComponent("sprite") as SpriteComponent;
+            let position: PositionComponent = gameEntity.getComponent("position") as PositionComponent;
+            spriteDistance[i] = ((camera.xPos - position.x) * (camera.xPos - position.x)) + ((camera.yPos - position.y) * (camera.yPos - position.y));
+
+            let distance: DistanceComponent = gameEntity.getComponent("distance") as DistanceComponent;
+
+            distance.distance = spriteDistance[i];
+
+            sprite.sprite.x = position.x;
+            sprite.sprite.y = position.y;
+
+            sprites.push(sprite.sprite);
+        }
+
+        return { sprites, spriteDistance, order };
+    }
+
     drawSkyBox(camera: Camera): void {
 
 
+        /*
+                // Ground
+                Renderer.rectGradient(
+                    0,
+                    Renderer.getCanvasHeight() / 2,
+                    Renderer.getCanvasWidth(),
+                    Renderer.getCanvasHeight(),
+                    this._worldMap.worldDefinition.floorColor,
+                    Colors.BLACK(),
+                );
 
-/*
-        // Ground
-        Renderer.rectGradient(
-            0,
-            Renderer.getCanvasHeight() / 2,
-            Renderer.getCanvasWidth(),
-            Renderer.getCanvasHeight(),
-            this._worldMap.worldDefinition.floorColor,
-            Colors.BLACK(),
-        );
-
-         */
+                 */
 
         this.renderFloorsAndCeiling(
             camera.xDir,
@@ -419,9 +460,9 @@ export class RayCaster {
             camera.xPlane,
             camera.yPlane,
             camera.xPos,
-                camera.yPos,
-                32,
-                32
+            camera.yPos,
+            32,
+            32
         );
 
         /*
@@ -450,8 +491,8 @@ export class RayCaster {
 
     renderFloorsAndCeiling(dirX: number, dirY: number, planeX: number, planeY: number, posX: number, posY: number, texWidth: number, texHeight: number) {
 
-        let floor : ImageData = this.preRenderTexture(this._floor,32,32);
-        let ceiling: ImageData = this.preRenderTexture(this._ceiling,32,32);
+        let floor: ImageData = this.preRenderTexture(this._floor, 32, 32);
+        let ceiling: ImageData = this.preRenderTexture(this._ceiling, 32, 32);
 
         let canvasWidth: number = Renderer.getCanvasWidth();
         let canvasHeight: number = Renderer.getCanvasHeight();
@@ -486,15 +527,9 @@ export class RayCaster {
                 floorX += floorStepX;
                 floorY += floorStepY;
 
-
-                let distance = this.calculateDistance(x, y, canvasWidth, canvasHeight) / Renderer.getCanvasHeight();
-
-
-                let floorColor : number = this.getColorFromTexture(floor,tx, ty, texWidth, distance);
-                buffer[y * canvasWidth + x] = floorColor;
-
-                let ceilingColor: number = this.getColorFromTexture(ceiling, tx, ty, texWidth, distance);
-                buffer[(canvasHeight - y - 1) * canvasWidth + x] =ceilingColor;
+                let distance : number = this.calculateDistance(x, y, canvasWidth, canvasHeight) / Renderer.getCanvasHeight();
+                buffer[y * canvasWidth + x] = this.getColorFromTexture(floor, tx, ty, texWidth, distance);
+                buffer[(canvasHeight - y - 1) * canvasWidth + x] = this.getColorFromTexture(ceiling, tx, ty, texWidth, distance);
             }
         }
 
@@ -555,6 +590,22 @@ export class RayCaster {
                     swapped = true;
                 }
             }
+        }
+    }
+
+    private processTransparentWall(camera: Camera, side: number,mapX: number, mapY: number, x: number) {
+        let wallDefined: boolean = false;
+        for (let i: number = 0; i < this._transparentWall.length; i++) {
+            if (this._transparentWall[i].xMap == mapX && this._transparentWall[i].yMap == mapY) {
+                this._transparentWall[i].xScreen = x;
+                wallDefined = true;
+                break;
+            }
+        }
+
+        if (!wallDefined) {
+            let tpWall: TransparentWall = new TransparentWall(camera, mapX, mapY, side, x, this._cameraXCoords);
+            this._transparentWall.push(tpWall);
         }
     }
 }
