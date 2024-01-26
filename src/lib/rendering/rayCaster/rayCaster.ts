@@ -335,6 +335,9 @@ export class RayCaster {
             let transformX: number = invDet * (camera.yDir * spriteX - camera.xDir * spriteY);
             let transformY: number = invDet * (-camera.yPlane * spriteX + camera.xPlane * spriteY);
 
+            let spriteScreenX: number = Math.floor(Renderer.getCanvasWidth() / 2) * (1 + transformX / transformY);
+
+
             // Render the sprite if it's in front of the camera.
             if (transformY > 0) {
                 for (transparentIdx; transparentIdx >= 0; transparentIdx--) {
@@ -349,10 +352,15 @@ export class RayCaster {
                 // Calculate dimensions and positions for rendering the sprite.
                 let spriteHeight: number = Math.abs(Math.floor(Renderer.getCanvasHeight() / transformY));
                 let drawStartY: number = -spriteHeight / 2 + Math.round(Renderer.getCanvasHeight() / 2);
-                let spriteScreenX: number = Math.floor(Renderer.getCanvasWidth() / 2) * (1 + transformX / transformY);
+
+
+
                 let spriteWidth: number = Math.abs(Math.floor(Renderer.getCanvasHeight() / transformY));
                 let drawStartX: number = Math.floor(-spriteWidth / 2 + spriteScreenX);
+
                 let drawEndX: number = drawStartX + spriteWidth;
+
+
 
                 // Clipping calculations to render only the visible part of the sprite.
                 let clipStartX: number = drawStartX;
@@ -365,7 +373,9 @@ export class RayCaster {
                     drawEndX = Renderer.getCanvasWidth() + spriteWidth;
                 }
 
-                // Clip sprite rendering to the visible area.
+
+
+                // This ensures we don't draw sprites the player can't actually see.
                 for (let stripe: number = drawStartX; stripe <= drawEndX; stripe++) {
                     if (transformY > this._zBuffer[stripe]) {
                         if (stripe - clipStartX <= 1) {
@@ -376,6 +386,8 @@ export class RayCaster {
                         }
                     }
                 }
+
+
 
                 // Render clipped image of the sprite.
                 if (clipStartX != clipEndX && clipStartX < Renderer.getCanvasWidth() && clipEndX > 0) {

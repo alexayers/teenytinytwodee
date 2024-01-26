@@ -133,7 +133,7 @@ export class MainGameScreen implements GameScreen {
             skyColor: new Color(40, 40, 40),
             wallTranslationTable: wallTranslationTable,
             width: 10,
-         //   items: this.buildItems(),
+            items: this.buildItems(),
             npcs: this.buildNpcs()
 
         });
