@@ -85,11 +85,6 @@ export class MovementSystem implements GameSystem {
 
         let gameEntity: GameEntity = this._worldMap.getEntityAtPosition(checkMapX, checkMapY);
 
-        if (gameEntity.hasComponent("wall")) {
-            console.log(`hitting wall at ${x} x ${y}`);
-            return false;
-        }
-
-        return true;
+        return !gameEntity.hasComponent("wall");
     }
 }
