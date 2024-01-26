@@ -23,8 +23,6 @@ export class MovementSystem implements GameSystem {
     @processComponents(["velocity", "position"],["velocity"])
     processEntity(gameEntity: GameEntity): void {
 
-        console.log("movement system");
-
         let velocityComponent: VelocityComponent =
             gameEntity.getComponent("velocity") as VelocityComponent;
         let positionComponent: PositionComponent =
@@ -41,13 +39,12 @@ export class MovementSystem implements GameSystem {
             movementDirection = MovementDirection.LEFT;
         } else if (velocityComponent.velY > 0) {
             movementDirection = MovementDirection.UP;
-        } else if (velocityComponent.velY > 0) {
+        } else if (velocityComponent.velY < 0) {
             movementDirection = MovementDirection.DOWN;
         }
 
         let animatedSpriteComponent: AnimatedSpriteComponent = gameEntity.getComponent("animatedSprite") as AnimatedSpriteComponent;
 
-        console.log("moving yo");
 
         if (tempX > positionComponent.x) {
             //  logger(LogType.info, "moving...");
@@ -59,22 +56,27 @@ export class MovementSystem implements GameSystem {
             //logger(LogType.info, "moving...");
         }
 
+        if (this.canWalk(tempX, positionComponent.y, movementDirection)) {
+            positionComponent.x += velocityComponent.velX;
+        }
+        if (this.canWalk(positionComponent.x, tempY, movementDirection)) {
+            positionComponent.y += velocityComponent.velY;
+        }
+
+        /*
         if (this.canWalk(tempX, tempY, movementDirection)) {
             positionComponent.x += velocityComponent.velX;
             positionComponent.y += velocityComponent.velY;
             animatedSpriteComponent.animatedSprite.currentAction = "walking";
-
-            let player: GameEntity = this._gameEntityRegistry.getSingleton("player");
-            let cameraComponent: CameraComponent = player.getComponent("camera") as CameraComponent;
-            let camera: Camera = cameraComponent.camera;
 
 
         } else {
             animatedSpriteComponent.animatedSprite.currentAction = "default";
         }
 
-        velocityComponent.velX = 0;
-        velocityComponent.velY = 0;
+         */
+
+
     }
 
     canWalk(x: number, y: number, movementDirection: MovementDirection): boolean {
@@ -84,6 +86,7 @@ export class MovementSystem implements GameSystem {
         let gameEntity: GameEntity = this._worldMap.getEntityAtPosition(checkMapX, checkMapY);
 
         if (gameEntity.hasComponent("wall")) {
+            console.log(`hitting wall at ${x} x ${y}`);
             return false;
         }
 

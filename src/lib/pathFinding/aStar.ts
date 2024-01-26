@@ -85,26 +85,39 @@ export class AStar {
     private calculateGValue(x: number, y: number): number {
         // Checking behind me
         if (x == (this._currentNode.x - 1) && y == this._currentNode.y) {
-
             let wall: boolean = this.isWall(this._currentNode.x - 1, this._currentNode.y);
             return this.getTileWeight(wall);
-
             // Checking in front of me
         } else if (x == (this._currentNode.x + 1) && y == this._currentNode.y) {
             let wall: boolean = this.isWall(this._currentNode.x + 1, this._currentNode.y);
             return this.getTileWeight(wall);
             // Checking above me
-        } else if (x == (this._currentNode.x) && y == this._currentNode.y + 1) {
-
+        } else if (x == this._currentNode.x && y == this._currentNode.y + 1) {
             let wall: boolean = this.isWall(this._currentNode.x, this._currentNode.y + 1);
             return this.getTileWeight(wall);
             // Checking below me
-        } else if (x == (this._currentNode.x) && y == this._currentNode.y - 1) {
+        } else if (x == this._currentNode.x && y == this._currentNode.y - 1) {
             let wall: boolean = this.isWall(this._currentNode.x, this._currentNode.y - 1);
             return this.getTileWeight(wall);
-            // Checking diagonal
+            // Checking top-left diagonal
+        } else if (x == this._currentNode.x - 1 && y == this._currentNode.y - 1) {
+            let wall: boolean = this.isWall(x, y);
+            return this.getTileWeight(wall);
+            // Checking top-right diagonal
+        } else if (x == this._currentNode.x + 1 && y == this._currentNode.y - 1) {
+            let wall: boolean = this.isWall(x, y);
+            return this.getTileWeight(wall);
+            // Checking bottom-left diagonal
+        } else if (x == this._currentNode.x - 1 && y == this._currentNode.y + 1) {
+            let wall: boolean = this.isWall(x, y);
+            return this.getTileWeight(wall);
+            // Checking bottom-right diagonal
+        } else if (x == this._currentNode.x + 1 && y == this._currentNode.y + 1) {
+            let wall: boolean = this.isWall(x, y);
+            return this.getTileWeight(wall);
         } else {
-            return 1400;
+            // Default case for other nodes (if any)
+            return Number.MAX_VALUE;
         }
     }
 
@@ -113,7 +126,7 @@ export class AStar {
         if (!wall) {
             return 10;
         } else {
-            return 100000;
+            return Number.MAX_VALUE;
         }
     }
 
@@ -126,8 +139,8 @@ export class AStar {
                 } else if (y >= 0 && x >= 0 && x <= this._worldMap.worldDefinition.width - 1 && y <= this._worldMap.worldDefinition.height - 1) {
                     let idx: number = this.translateCoordinatesToIdx(x, y);
 
-                    if (this.isOnClosedList(idx)) {
-                        continue;
+                    if (this.isOnClosedList(idx) || this.isWall(x, y) || this.isDiagonalMoveThroughWall(x, y, this._currentNode)) {
+                        continue; // Skip nodes that are on the closed list, are walls, or are diagonal moves through walls
                     }
 
                     let cost: number = this._currentNode.g + this.calculateGValue(x, y);
@@ -165,7 +178,11 @@ export class AStar {
     }
 
     public getPath(): Array<PathNode> {
-        return this._path.reverse();
+
+        let path = this._path.reverse();
+
+        console.log(path);
+        return path;
     }
 
     public isPathFound(): boolean {
@@ -202,7 +219,14 @@ export class AStar {
             return true;
         }
 
+
+
         return this._worldMap.getEntityAtPosition(x, y).hasComponent("wall") ||
             this._worldMap.getEntityAtPosition(x, y).hasComponent("transparent");
     }
+
+    private isDiagonalMoveThroughWall(x: number, y: number, currentNode: PathNode): boolean {
+        return this.isWall(x, currentNode.y) && this.isWall(currentNode.x, y);
+    }
+
 }

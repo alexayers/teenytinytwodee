@@ -66,7 +66,7 @@ export class WorldMap {
     }
 
     getEntityAtPosition(x: number, y: number): GameEntity {
-        return this._gameMap[(x + (y * this._worldDefinition.width))];
+        return this._gameMap[x + (y * this._worldDefinition.width)];
     }
 
     get gameMap() {

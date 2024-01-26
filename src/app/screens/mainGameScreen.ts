@@ -156,7 +156,7 @@ export class MainGameScreen implements GameScreen {
             .addComponent(new DistanceComponent())
             .addComponent(new PositionComponent(3,3))
             .addComponent(new AnimatedSpriteComponent(new AnimatedSprite(animation,
-                32,32,"default")))
+                16,32,"default")))
             .build()
         )
 
