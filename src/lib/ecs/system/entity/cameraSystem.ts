@@ -1,8 +1,8 @@
 import {GameSystem} from "../../gameSystem";
 import {GameEntity} from "../../gameEntity";
-import {CameraComponent} from "../../components/cameraComponent";
 import {VelocityComponent} from "../../components/velocityComponent";
 import {Performance} from "../../../rendering/rayCaster/performance";
+import {CameraComponent} from "../../components/rendering/cameraComponent";
 
 export class CameraSystem implements GameSystem {
 

@@ -143,6 +143,17 @@ export class WorldMap {
         }
     }
 
+    getGameEntities(): Array<GameEntity> {
+        let gameEntities: Array<GameEntity> = [];
+        if (this._worldDefinition.items) {
+            gameEntities.push(...this._worldDefinition.items);
+        }
+        if (this._worldDefinition.npcs) {
+            gameEntities.push(...this._worldDefinition.npcs);
+        }
+        return gameEntities;
+    }
+
 
     get worldDefinition(): WorldDefinition {
         return this._worldDefinition;

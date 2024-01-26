@@ -1,5 +1,5 @@
 import {Renderer} from "./renderer";
-import {Sprite} from "./sprite";
+import {logger, LogType} from "../utils/loggerUtils";
 
 
 export class AnimatedSprite {
@@ -7,20 +7,41 @@ export class AnimatedSprite {
     private _tick:number;
     private readonly _maxTicks:number;
     private _currentFrame: number;
-    private _frames:Map<string,Array<HTMLImageElement>>;
+    private _frames:Map<string,Array<HTMLImageElement>> = new Map<string, Array<HTMLImageElement>>();
     private _x: number;
     private _y: number;
+    private _width: number;
+    private _height: number;
     private _currentAction: string;
 
 
-    constructor(x: number, y: number, maxTicks: number = 16) {
+    constructor(imageFiles:Map<string,Array<any>>, width: number, height:number, currentAction: string) {
+        this._currentAction = currentAction;
+        this._width = width;
+        this._height = height;
+        this._maxTicks = 8;
 
-        this._x = x;
-        this._y = y;
-        this._maxTicks = maxTicks;
+        console.log(imageFiles);
+
+        for (const [key, files] of imageFiles) {
+
+            logger(LogType.INFO, `Loading ${key}`)
+
+            this._frames.set(key, []);
+
+            for (const imageFile of files) {
+                let image : HTMLImageElement = new Image();
+                image.src = imageFile;
+                this._frames.get(key).push(image);
+
+                logger(LogType.INFO, `Loading ${key} -> ${imageFile}`)
+            }
+
+        }
+
         this._currentFrame = 0;
         this._tick = 0;
-        this._frames = new Map<string, Array<HTMLImageElement>>();
+
     }
 
 
@@ -91,6 +112,41 @@ export class AnimatedSprite {
 
             if (this._currentFrame == this._frames.get(this._currentAction).length) {
                 this._currentFrame = 0;
+            }
+        }
+    }
+
+    currentImage() : HTMLImageElement {
+        return this._frames.get(this._currentAction)[this._currentFrame];
+    }
+
+
+    get width(): number {
+        return this._width;
+    }
+
+    set width(value: number) {
+        this._width = value;
+    }
+
+    get height(): number {
+        return this._height;
+    }
+
+    set height(value: number) {
+        this._height = value;
+    }
+
+    nextFrame() : void {
+        this._tick++;
+
+        if (this._tick == this._maxTicks) {
+            this._tick = 0;
+            this._currentFrame++;
+
+            if (this._currentFrame == this._frames.get(this._currentAction).length) {
+                this._currentFrame = 0;
+                console.log("okie")
             }
         }
     }

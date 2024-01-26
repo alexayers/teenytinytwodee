@@ -9,6 +9,8 @@ import {PositionComponent} from "../../ecs/components/positionComponent";
 import {DistanceComponent} from "../../ecs/components/distanceComponent";
 import {Color} from "../../primatives/color";
 import {SpriteComponent} from "../../ecs/components/rendering/spriteComponent";
+import {AnimatedSprite} from "../animatedSprite";
+import {AnimatedSpriteComponent} from "../../ecs/components/rendering/animatedSpriteComponent";
 
 enum WallSide {
     X_SIDE,
@@ -305,7 +307,7 @@ export class RayCaster {
     drawSpritesAndTransparentWalls(camera: Camera): void {
 
         // Arrays for storing distances of sprites from the camera, their order, and the game entities.
-        const gameEntities: Array<GameEntity> = this.getGameEntities();
+        const gameEntities: Array<GameEntity> = this._worldMap.getGameEntities();
 
         // Calculate distance of each game entity from the camera and store their sprite components.
         const { sprites, spriteDistance, order } = this.prepareSprites(gameEntities, camera);
@@ -317,7 +319,7 @@ export class RayCaster {
         this.renderSpritesAndWalls(sprites, spriteDistance, order, camera);
     }
 
-    renderSpritesAndWalls(sprites: Array<Sprite>, spriteDistance: Array<number>, order: Array<number>, camera: Camera): void {
+    renderSpritesAndWalls(sprites: Array<AnimatedSprite>, spriteDistance: Array<number>, order: Array<number>, camera: Camera): void {
         let transparentIdx: number = -1;
         if (this._transparentWall.length > 0) {
             transparentIdx = this._transparentWall.length - 1;
@@ -390,7 +392,10 @@ export class RayCaster {
                     if (drawWidth < 0) {
                         drawWidth = 0;
                     }
-                    Renderer.renderClippedImage(sprites[order[i]].image, drawXStart, 0, drawXEnd, sprites[order[i]].height, clipStartX, drawStartY, drawWidth, spriteHeight);
+
+                    Renderer.renderClippedImage(sprites[order[i]].currentImage(), drawXStart, 0, drawXEnd, sprites[order[i]].height, clipStartX, drawStartY, drawWidth, spriteHeight);
+
+
                 }
             }
         }
@@ -401,27 +406,20 @@ export class RayCaster {
         this._transparentWall.length = 0;
     }
 
-    getGameEntities(): Array<GameEntity> {
-        let gameEntities: Array<GameEntity> = [];
-        if (this._worldMap.worldDefinition.items) {
-            gameEntities.push(...this._worldMap.worldDefinition.items);
-        }
-        if (this._worldMap.worldDefinition.npcs) {
-            gameEntities.push(...this._worldMap.worldDefinition.npcs);
-        }
-        return gameEntities;
-    }
 
-    prepareSprites(gameEntities: Array<GameEntity>, camera: Camera): { sprites: Array<Sprite>, spriteDistance: Array<number>, order: Array<number> } {
+
+    prepareSprites(gameEntities: Array<GameEntity>, camera: Camera): { sprites: Array<AnimatedSprite>, spriteDistance: Array<number>, order: Array<number> } {
         let spriteDistance: Array<number> = [];
         let order: Array<number> = [];
-        let sprites: Array<Sprite> = [];
+        let sprites: Array<AnimatedSprite> = [];
 
         for (let i: number = 0; i < gameEntities.length; i++) {
             order[i] = i;
 
             let gameEntity: GameEntity = gameEntities[i];
-            let sprite: SpriteComponent = gameEntity.getComponent("sprite") as SpriteComponent;
+
+
+            let animatedSpriteComponent: AnimatedSpriteComponent = gameEntity.getComponent("animatedSprite") as AnimatedSpriteComponent;
             let position: PositionComponent = gameEntity.getComponent("position") as PositionComponent;
             spriteDistance[i] = ((camera.xPos - position.x) * (camera.xPos - position.x)) + ((camera.yPos - position.y) * (camera.yPos - position.y));
 
@@ -429,10 +427,10 @@ export class RayCaster {
 
             distance.distance = spriteDistance[i];
 
-            sprite.sprite.x = position.x;
-            sprite.sprite.y = position.y;
+            animatedSpriteComponent.animatedSprite.x = position.x;
+            animatedSpriteComponent.animatedSprite.y = position.y;
 
-            sprites.push(sprite.sprite);
+            sprites.push(animatedSpriteComponent.animatedSprite);
         }
 
         return { sprites, spriteDistance, order };

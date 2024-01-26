@@ -3,10 +3,12 @@ import {RayCaster} from "../../../rendering/rayCaster/rayCaster";
 import {WorldMap} from "../../../rendering/rayCaster/worldMap";
 import {GameEntityRegistry} from "../../../registries/gameEntityRegistry";
 import {GameEntity} from "../../gameEntity";
-import {CameraComponent} from "../../components/cameraComponent";
 import {Color} from "../../../primatives/color";
 import {Renderer} from "../../../rendering/renderer";
 import {Performance} from "../../../rendering/rayCaster/performance";
+import {CameraComponent} from "../../components/rendering/cameraComponent";
+import {Game} from "../../../../app/main";
+import {AnimatedSpriteComponent} from "../../components/rendering/animatedSpriteComponent";
 
 export class RayCastRenderSystem implements GameRenderSystem {
 
@@ -31,7 +33,7 @@ export class RayCastRenderSystem implements GameRenderSystem {
         let player : GameEntity = this._gameEntityRegistry.getSingleton("player");
 
         Performance.updateFrameTimes();
-        this.moveAll();
+        this.moveAllDoors();
 
         let camera: CameraComponent = player.getComponent("camera") as CameraComponent;
 
@@ -42,10 +44,16 @@ export class RayCastRenderSystem implements GameRenderSystem {
         }
 
         this._rayCaster.drawSpritesAndTransparentWalls(camera.camera);
+        let gameEntities: Array<GameEntity> = this._worldMap.getGameEntities();
+
+        for (let i = 0;i < gameEntities.length; i++ ) {
+            let animatedSpriteComponent : AnimatedSpriteComponent = gameEntities[i].getComponent("animatedSprite") as AnimatedSpriteComponent;
+            animatedSpriteComponent.animatedSprite.nextFrame();
+        }
 
     }
 
-    moveAll() : void {
+    moveAllDoors() : void {
         this._worldMap.moveDoors();
     }
 

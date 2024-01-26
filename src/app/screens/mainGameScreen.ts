@@ -117,7 +117,8 @@ export class MainGameScreen implements GameScreen {
             skyColor: new Color(40, 40, 40),
             wallTranslationTable: wallTranslationTable,
             width: 10,
-            items: this.buildItems()
+            items: this.buildItems(),
+            npcs: this.buildNpcs()
 
         });
 
@@ -132,11 +133,17 @@ export class MainGameScreen implements GameScreen {
     buildItems() : Array<GameEntity> {
         let gameEntities : Array<GameEntity> =[];
 
+        let animation: Map<string, Array<string>> = new Map<string, Array<string>>();
+
+        animation.set("default", []);
+        animation.get("default").push(require("../../assets/flowers.png"));
+
         gameEntities.push(new GameEntityBuilder("flowers")
             .addComponent(new ItemComponent())
             .addComponent(new DistanceComponent())
             .addComponent(new PositionComponent(3,3))
-            .addComponent(new SpriteComponent(new Sprite(32,32, require("../../assets/flowers.png"))))
+            .addComponent(new AnimatedSpriteComponent(new AnimatedSprite(animation,
+                32,32,"default")))
             .build()
         )
 
@@ -146,11 +153,23 @@ export class MainGameScreen implements GameScreen {
     buildNpcs() : Array<GameEntity> {
         let gameEntities : Array<GameEntity> =[];
 
+        let animation: Map<string, Array<string>> = new Map<string, Array<string>>();
+
+        animation.set("default", []);
+        animation.get("default").push(require("../../assets/skeleton1.png"));
+        animation.get("default").push(require("../../assets/skeleton2.png"));
+        animation.get("default").push(require("../../assets/skeleton1.png"));
+        animation.get("default").push(require("../../assets/skeleton3.png"));
+
         gameEntities.push(new GameEntityBuilder("skeleton")
             .addComponent(new ItemComponent())
             .addComponent(new DistanceComponent())
-            .addComponent(new PositionComponent(3,3))
-            //.addComponent(new AnimatedSpriteComponent(new AnimatedSprite()))
+            .addComponent(new PositionComponent(2,2))
+            .addComponent(new DistanceComponent())
+            .addComponent(new AnimatedSpriteComponent(new AnimatedSprite(
+                animation,
+                32,32,"default"
+            )))
             .build()
         )
 
@@ -224,5 +243,7 @@ export class MainGameScreen implements GameScreen {
         this._renderSystems.forEach((renderSystem : GameRenderSystem) =>{
             renderSystem.process();
         });
+
+
     }
 }

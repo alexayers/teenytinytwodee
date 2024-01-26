@@ -1,8 +1,8 @@
 import {GameSystem} from "../../gameSystem";
 import {DoorState, WorldMap} from "../../../rendering/rayCaster/worldMap";
 import {GameEntity} from "../../gameEntity";
-import {CameraComponent} from "../../components/cameraComponent";
 import {Camera} from "../../../rendering/rayCaster/camera";
+import {CameraComponent} from "../../components/rendering/cameraComponent";
 
 
 export class InteractionSystem implements GameSystem {
