@@ -179,10 +179,7 @@ export class AStar {
 
     public getPath(): Array<PathNode> {
 
-        let path = this._path.reverse();
-
-        console.log(path);
-        return path;
+        return this._path.reverse();
     }
 
     public isPathFound(): boolean {
