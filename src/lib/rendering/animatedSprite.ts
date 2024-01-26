@@ -138,7 +138,6 @@ export class AnimatedSprite {
 
             if (this._currentFrame == this._frames.get(this._currentAction).length) {
                 this._currentFrame = 0;
-                console.log("okie")
             }
         }
     }

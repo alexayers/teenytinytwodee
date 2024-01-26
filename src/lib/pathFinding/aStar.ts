@@ -1,10 +1,6 @@
 import {PathNode} from "./pathNode";
+import {WorldMap} from "../rendering/rayCaster/worldMap";
 
-export interface GameMap {
-    width: number
-    height: number
-    walls: Array<boolean>
-}
 
 export class AStar {
 
@@ -18,63 +14,46 @@ export class AStar {
     private readonly _endX: number;
     private readonly _endY: number;
 
-    private readonly _gameMap: GameMap;
+    private readonly _worldMap: WorldMap = WorldMap.getInstance();
 
 
-    private translateCoordinatesToIdx(x: number, y: number): number {
-        return x + (y * this._gameMap.width);
-    }
-
-
-    public constructor(startX: number, startY: number, endX: number, endY: number, gameMap: GameMap) {
+    public constructor(startX: number, startY: number, endX: number, endY: number) {
         this._startX = startX;
         this._startY = startY;
         this._endX = endX;
         this._endY = endY;
-        this._gameMap = gameMap;
 
         let idx: number = this.translateCoordinatesToIdx(startX, startY);
 
         let n: PathNode = new PathNode(startX, startY);
-        n.setIdx(idx);
-        n.setParent(0);
-        n.setG(0);
-        n.setH(this.getManhattanDistance(n.getX(), n.getY()));
-        n.setF(n.getG() + n.getH());
+        n.idx = idx;
+        n.parent = 0;
+        n.g = 0;
+        n.h = this.getManhattanDistance(n.x, n.y);
+        n.f = (n.g + n.h);
 
         this._openSet.set(idx, n);
     }
+
+    private translateCoordinatesToIdx(x: number, y: number): number {
+        return x + (y * this._worldMap.worldDefinition.width);
+    }
+
 
     private getManhattanDistance(x: number, y: number): number {
         return ((Math.abs(x - this._endX) + Math.abs(y - this._endY)) * 10);
     }
 
     private isOnClosedList(idx: number): boolean {
-
-        // @ts-ignore
-        for (let [k, pathNode] of this._closedSet) {
-            if (pathNode.getIdx() == idx) {
-                return true;
-            }
-        }
-
-        return false;
+        return this._closedSet.has(idx);
     }
 
     private isOnOpenedList(idx: number): boolean {
-
-        // @ts-ignore
-        for (let [k, pathNode] of this._openSet) {
-            if (pathNode.getIdx() == idx) {
-                return true;
-            }
-        }
-
-        return false;
+        return this._openSet.has(idx);
     }
 
     private addToOpenedList(n: PathNode): void {
-        this._openSet.set(n.getIdx(), n);
+        this._openSet.set(n.idx, n);
     }
 
     private addToClosedList(idx: number, n: PathNode): void {
@@ -82,45 +61,46 @@ export class AStar {
     }
 
     private findLowestCost(): PathNode {
-        let f: number = 99999;
-        let lowestCostIdx: number = 0;
+        let f: number = Number.MAX_VALUE;
+        let lowestCostIdx: number | null = null;
 
-        // @ts-ignore
         for (let [k, pathNode] of this._openSet) {
-
-            if (pathNode.getF() <= f) {
-                f = pathNode.getF();
-                lowestCostIdx = pathNode.getIdx();
+            if (pathNode.f < f) {
+                f = pathNode.f;
+                lowestCostIdx = pathNode.idx;
             }
         }
 
-        let lowestNode: PathNode = this._openSet.get(lowestCostIdx);
-        this._openSet.delete(lowestCostIdx);
-        return lowestNode;
+        if (lowestCostIdx !== null) {
+            let lowestNode: PathNode | undefined = this._openSet.get(lowestCostIdx);
+            if (lowestNode) {
+                this._openSet.delete(lowestCostIdx);
+                return lowestNode;
+            }
+        }
+
+        return null;
     }
 
     private calculateGValue(x: number, y: number): number {
         // Checking behind me
-        if (x == (this._currentNode.getX() - 1) && y == this._currentNode.getY()) {
+        if (x == (this._currentNode.x - 1) && y == this._currentNode.y) {
 
-            let pos: number = this.translateCoordinatesToIdx(this._currentNode.getX() - 1, this._currentNode.getY());
-            let wall: boolean = this._gameMap.walls[pos];
+            let wall: boolean = this.isWall(this._currentNode.x - 1, this._currentNode.y);
             return this.getTileWeight(wall);
 
             // Checking in front of me
-        } else if (x == (this._currentNode.getX() + 1) && y == this._currentNode.getY()) {
-            let pos: number = this.translateCoordinatesToIdx(this._currentNode.getX() + 1, this._currentNode.getY());
-            let wall: boolean = this._gameMap.walls[pos];
+        } else if (x == (this._currentNode.x + 1) && y == this._currentNode.y) {
+            let wall: boolean = this.isWall(this._currentNode.x + 1, this._currentNode.y);
             return this.getTileWeight(wall);
             // Checking above me
-        } else if (x == (this._currentNode.getX()) && y == this._currentNode.getY() + 1) {
-            let pos: number = this.translateCoordinatesToIdx(this._currentNode.getX(), this._currentNode.getY() + 1);
-            let wall: boolean = this._gameMap.walls[pos];
+        } else if (x == (this._currentNode.x) && y == this._currentNode.y + 1) {
+
+            let wall: boolean = this.isWall(this._currentNode.x, this._currentNode.y + 1);
             return this.getTileWeight(wall);
             // Checking below me
-        } else if (x == (this._currentNode.getX()) && y == this._currentNode.getY() - 1) {
-            let pos: number = this.translateCoordinatesToIdx(this._currentNode.getX(), this._currentNode.getY() - 1);
-            let wall: boolean = this._gameMap.walls[pos];
+        } else if (x == (this._currentNode.x) && y == this._currentNode.y - 1) {
+            let wall: boolean = this.isWall(this._currentNode.x, this._currentNode.y - 1);
             return this.getTileWeight(wall);
             // Checking diagonal
         } else {
@@ -138,37 +118,36 @@ export class AStar {
     }
 
     private buildNodeList(): void {
+        for (let y: number = (this._currentNode.y - 1); y <= (this._currentNode.y + 1); y++) {
+            for (let x: number = (this._currentNode.x - 1); x <= (this._currentNode.x + 1); x++) {
 
-        for (let y = (this._currentNode.getY() + 1); y >= (this._currentNode.getY() - 1); y--) {
-            for (let x = (this._currentNode.getX() - 1); x < (this._currentNode.getX() + 2); x++) {
-
-                if (x == this._currentNode.getX() && y == this._currentNode.getY()) {
+                if (x == this._currentNode.x && y == this._currentNode.y) {
                     continue;
-                } else {
-                    if (y >= 0 &&
-                        x >= 0 &&
-                        x < (this._gameMap.width - 1) &&
-                        y < (this._gameMap.height - 1)) {
-                        let cost: number = this._currentNode.getG() + this.calculateGValue(x, y);
-                        let idx: number = this.translateCoordinatesToIdx(x, y);
+                } else if (y >= 0 && x >= 0 && x <= this._worldMap.worldDefinition.width - 1 && y <= this._worldMap.worldDefinition.height - 1) {
+                    let idx: number = this.translateCoordinatesToIdx(x, y);
 
-                        if (this.isOnOpenedList(idx) && cost < this._openSet.get(idx).getG()) {
-                            this._openSet.get(idx).setG(cost);
-                            this._openSet.get(idx).setF(this._openSet.get(idx).getG() + this._openSet.get(idx).getH());
-                            this._openSet.get(idx).setParent(this._currentNode.getIdx());
-                        } else if (this.isOnClosedList(idx)) {
-                            continue;
-                        } else if (!this.isOnOpenedList(idx)) {
-                            let n: PathNode = new PathNode(0, 0);
-                            n.setG(cost);
-                            n.setX(x);
-                            n.setY(y);
-                            n.setH(this.getManhattanDistance(x, y));
-                            n.setIdx(idx);
-                            n.setParent(this._currentNode.getIdx());
-                            n.setF(n.getG() + n.getH());
-                            this.addToOpenedList(n);
-                        }
+                    if (this.isOnClosedList(idx)) {
+                        continue;
+                    }
+
+                    let cost: number = this._currentNode.g + this.calculateGValue(x, y);
+
+                    if (this.isOnOpenedList(idx) && cost < this._openSet.get(idx).g) {
+                        let nodeToUpdate : PathNode = this._openSet.get(idx);
+                        nodeToUpdate.g = cost;
+                        nodeToUpdate.f = cost + nodeToUpdate.h;
+                        nodeToUpdate.parent = this._currentNode.idx;
+                    } else if (!this.isOnOpenedList(idx)) {
+                        let h: number = this.getManhattanDistance(x, y);
+                        let n: PathNode = new PathNode(x, y);
+
+                        n.h = h;
+                        n.g = cost;
+                        n.idx = idx;
+                        n.parent = this._currentNode.idx;
+                        n.f = (n.g + n.h);
+
+                        this.addToOpenedList(n);
                     }
                 }
             }
@@ -181,12 +160,12 @@ export class AStar {
 
         while (idx != startIdx) {
             this._path.push(this._closedSet.get(idx));
-            idx = this._closedSet.get(idx).getParent();
+            idx = this._closedSet.get(idx).parent;
         }
     }
 
     public getPath(): Array<PathNode> {
-        return this._path;
+        return this._path.reverse();
     }
 
     public isPathFound(): boolean {
@@ -194,22 +173,36 @@ export class AStar {
 
         while (this._openSet.size != 0) {
             this._currentNode = this.findLowestCost();
-            this.addToClosedList(this._currentNode.getIdx(), this._currentNode);
 
-            if (this._currentNode.getIdx() == this.translateCoordinatesToIdx(this._endX, this._endY)) {
+            if (this._currentNode === null) {
+                break;
+            }
+
+            this.addToClosedList(this._currentNode.idx, this._currentNode);
+
+            if (this._currentNode.idx == this.translateCoordinatesToIdx(this._endX, this._endY)) {
                 this.buildRoute();
-
                 pathFound = true;
                 break;
             } else {
                 this.buildNodeList();
             }
-
-
         }
 
         return pathFound;
     }
 
 
+    private isWall(x: number, y: number) {
+
+        let pos: number = x + (y * this._worldMap.worldDefinition.width);
+
+
+        if (pos < 0 || pos >= (this._worldMap.worldDefinition.width * this._worldMap.worldDefinition.height)) {
+            return true;
+        }
+
+        return this._worldMap.getEntityAtPosition(x, y).hasComponent("wall") ||
+            this._worldMap.getEntityAtPosition(x, y).hasComponent("transparent");
+    }
 }

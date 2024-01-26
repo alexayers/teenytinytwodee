@@ -9,6 +9,7 @@
     "sourceMap": true,
     "baseUrl": "./src",
     "outDir": "dist",
+    "experimentalDecorators": true,
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "paths": {

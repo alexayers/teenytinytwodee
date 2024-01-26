@@ -23,7 +23,6 @@ import {InteractionSystem} from "../../lib/ecs/system/entity/interactionSystem";
 import {PickUpSystem} from "../../lib/ecs/system/entity/pickUpSystem";
 import {RayCastRenderSystem} from "../../lib/ecs/system/render/rayCastRenderSystem";
 import {Color} from "../../lib/primatives/color";
-import {Game} from "../main";
 import {ItemComponent} from "../../lib/ecs/components/itemComponent";
 import {PositionComponent} from "../../lib/ecs/components/positionComponent";
 import {DistanceComponent} from "../../lib/ecs/components/distanceComponent";
@@ -31,6 +30,9 @@ import {AnimatedSpriteComponent} from "../../lib/ecs/components/rendering/animat
 import {AnimatedSprite} from "../../lib/rendering/animatedSprite";
 import {SpriteComponent} from "../../lib/ecs/components/rendering/spriteComponent";
 import {CameraComponent} from "../../lib/ecs/components/rendering/cameraComponent";
+import {AiSystem} from "../../lib/ecs/system/entity/aiSystem";
+import {AiComponent, MovementStyle} from "../../lib/ecs/components/ai/aiComponent";
+import {MovementSystem} from "../../lib/ecs/system/entity/movementSystem";
 
 
 export class MainGameScreen implements GameScreen {
@@ -39,6 +41,7 @@ export class MainGameScreen implements GameScreen {
     private _gameSystems: Array<GameSystem> = [];
     private _renderSystems: Array<GameRenderSystem> = [];
     private _gameEntityRegistry: GameEntityRegistry = GameEntityRegistry.getInstance();
+    private _worldMap : WorldMap = WorldMap.getInstance();
 
     onEnter(): void {
 
@@ -61,11 +64,21 @@ export class MainGameScreen implements GameScreen {
             new PickUpSystem()
         );
 
+        this._gameSystems.push(
+            new AiSystem()
+        );
+
+        this._gameSystems.push(
+            new MovementSystem()
+        );
+
         this._renderSystems.push(
             new RayCastRenderSystem()
         );
 
-        let worldMap : WorldMap = WorldMap.getInstance();
+
+
+
 
         let wall: GameEntity = new GameEntityBuilder("wall")
             .addComponent(new WallComponent())
@@ -109,7 +122,7 @@ export class MainGameScreen implements GameScreen {
         wallTranslationTable.set(0, floor);
 
 
-        worldMap.loadMap({
+        this._worldMap.loadMap({
             floorColor: new Color(74, 67, 57),
             wallGrid: wallGrid,
             height: 10,
@@ -161,11 +174,18 @@ export class MainGameScreen implements GameScreen {
         animation.get("default").push(require("../../assets/skeleton1.png"));
         animation.get("default").push(require("../../assets/skeleton3.png"));
 
+        animation.set("walking", []);
+        animation.get("walking").push(require("../../assets/skeleton1.png"));
+        animation.get("walking").push(require("../../assets/skeleton2.png"));
+        animation.get("walking").push(require("../../assets/skeleton1.png"));
+        animation.get("walking").push(require("../../assets/skeleton3.png"));
+
         gameEntities.push(new GameEntityBuilder("skeleton")
             .addComponent(new ItemComponent())
             .addComponent(new DistanceComponent())
             .addComponent(new PositionComponent(2,2))
             .addComponent(new DistanceComponent())
+            .addComponent(new AiComponent(MovementStyle.follow, false))
             .addComponent(new AnimatedSpriteComponent(new AnimatedSprite(
                 animation,
                 32,32,"default"
@@ -224,11 +244,18 @@ export class MainGameScreen implements GameScreen {
     logicLoop(): void {
 
         this.keyboard();
-        let player : GameEntity = this._gameEntityRegistry.getSingleton("player");
 
-        this._gameSystems.forEach((gameSystem: GameSystem) => {
-            gameSystem.processEntity(player)
+        let gameEntities : Array<GameEntity> = [];
+        gameEntities.push(this._gameEntityRegistry.getSingleton("player"));
+
+        gameEntities.push(...this._worldMap.getGameEntities());
+
+        gameEntities.forEach(gameEntity => {
+            this._gameSystems.forEach((gameSystem: GameSystem) => {
+                gameSystem.processEntity(gameEntity);
+            });
         });
+
     }
 
     mouseClick(x: number, y: number, mouseButton : MouseButton): void {

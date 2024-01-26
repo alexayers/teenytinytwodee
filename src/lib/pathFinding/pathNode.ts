@@ -12,59 +12,60 @@ export class PathNode {
         this._y = y;
     }
 
-    public getX(): number {
+
+    get x(): number {
         return this._x;
     }
 
-    public setX(x: number): void {
-        this._x = x;
+    set x(value: number) {
+        this._x = value;
     }
 
-    public getY(): number {
+    get y(): number {
         return this._y;
     }
 
-    public setY(y: number): void {
-        this._y = y;
+    set y(value: number) {
+        this._y = value;
     }
 
-    public getIdx(): number {
+    get idx(): number {
         return this._idx;
     }
 
-    public setIdx(idx: number): void {
-        this._idx = idx;
+    set idx(value: number) {
+        this._idx = value;
     }
 
-    public getParent(): number {
+    get parent(): number {
         return this._parent;
     }
 
-    public setParent(parent: number): void {
-        this._parent = parent;
+    set parent(value: number) {
+        this._parent = value;
     }
 
-    public getG(): number {
+    get g(): number {
         return this._g;
     }
 
-    public setG(g: number): void {
-        this._g = g;
+    set g(value: number) {
+        this._g = value;
     }
 
-    public getH(): number {
+    get h(): number {
         return this._h;
     }
 
-    public setH(h: number): void {
-        this._h = h;
+    set h(value: number) {
+        this._h = value;
     }
 
-    public getF(): number {
+    get f(): number {
         return this._f;
     }
 
-    public setF(f: number): void {
-        this._f = f;
+    set f(value: number) {
+        this._f = value;
     }
 }
