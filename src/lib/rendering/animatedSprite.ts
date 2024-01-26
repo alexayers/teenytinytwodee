@@ -21,11 +21,7 @@ export class AnimatedSprite {
         this._height = height;
         this._maxTicks = 8;
 
-        console.log(imageFiles);
-
         for (const [key, files] of imageFiles) {
-
-            logger(LogType.INFO, `Loading ${key}`)
 
             this._frames.set(key, []);
 
@@ -33,17 +29,13 @@ export class AnimatedSprite {
                 let image : HTMLImageElement = new Image();
                 image.src = imageFile;
                 this._frames.get(key).push(image);
-
-                logger(LogType.INFO, `Loading ${key} -> ${imageFile}`)
             }
-
         }
 
         this._currentFrame = 0;
         this._tick = 0;
 
     }
-
 
     get x(): number {
         return this._x;
