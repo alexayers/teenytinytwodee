@@ -8,14 +8,14 @@ import {ColorUtils} from "../utils/colorUtils";
 export class Renderer {
     private static _canvas: HTMLCanvasElement;
     private static _ctx: CanvasRenderingContext2D;
-    private static _calculationCanvas : HTMLCanvasElement;
+    private static _calculationCanvas: HTMLCanvasElement;
 
     private static _dataCanvas: HTMLCanvasElement;
     private static _dataContext: CanvasRenderingContext2D;
 
-    public static init() : void {
+    public static init(): void {
 
-        let container : HTMLDivElement = document.createElement('div');
+        let container: HTMLDivElement = document.createElement('div');
         container.id = "container";
 
         let resolution = ConfigurationManager.getValue("resolution");
@@ -40,25 +40,24 @@ export class Renderer {
     }
 
 
-    static getImageData(image: HTMLImageElement) : Uint8ClampedArray {
+    static getImageData(image: HTMLImageElement): Uint8ClampedArray {
 
-        this._dataContext.drawImage(image, 0,0);
+        this._dataContext.drawImage(image, 0, 0);
 
-        let imageData : ImageData = this._dataContext.getImageData(0, 0, image.width, image.height);
+        let imageData: ImageData = this._dataContext.getImageData(0, 0, image.width, image.height);
         return imageData.data;
     }
 
 
-
-    static clearScreen() : void {
-        Renderer._ctx.clearRect(0,0,Renderer._canvas.width, Renderer._canvas.height);
+    static clearScreen(): void {
+        Renderer._ctx.clearRect(0, 0, Renderer._canvas.width, Renderer._canvas.height);
     }
 
     static setColor(color: Color): void {
         Renderer._ctx.fillStyle = ColorUtils.RGBtoHex(color.red, color.green, color.blue);
     }
 
-    public static resize() : void {
+    public static resize(): void {
         if (Renderer._canvas !== undefined) {
             Renderer._canvas.width = window.innerWidth;
             Renderer._canvas.height = window.innerHeight;
@@ -71,14 +70,14 @@ export class Renderer {
         if (flip) {
 
             Renderer._ctx.translate(x + width, y);
-            Renderer._ctx.scale(-1,1);
+            Renderer._ctx.scale(-1, 1);
 
             Renderer._ctx.drawImage(
                 image,
-                0,0, width, height
+                0, 0, width, height
             );
 
-            Renderer._ctx.setTransform(1,0,0,1,0,0);
+            Renderer._ctx.setTransform(1, 0, 0, 1, 0, 0);
 
         } else {
             Renderer._ctx.drawImage(
@@ -92,32 +91,45 @@ export class Renderer {
     }
 
     static renderClippedImage(image: HTMLImageElement,
-                       sx : number,
-                       sy : number,
-                       swidth : number,
-                       sheight : number,
-                       x : number,
-                       y : number,
-                       width : number,
-                       height : number) : void {
+                              sx: number,
+                              sy: number,
+                              swidth: number,
+                              sheight: number,
+                              x: number,
+                              y: number,
+                              width: number,
+                              height: number,
+                              shouldFlip: boolean = false): void {
 
-            Renderer._ctx.drawImage(
-                image,
-                sx, sy, swidth, sheight, x, y, width, height
-            );
+        // Save the current state of the context
+        Renderer._ctx.save();
+
+        if (shouldFlip) {
+            // Flip the context horizontally around the image's vertical axis
+            Renderer._ctx.scale(-1, 1);
+            Renderer._ctx.translate(-x - width, 0);
+        }
+
+        // Draw the image with adjusted context
+        Renderer._ctx.drawImage(
+            image,
+            sx, sy, swidth, sheight, x, y, width, height
+        );
+
+        // Restore the context to its original state
+        Renderer._ctx.restore();
 
     }
 
 
-
-    static calculateTextWidth(text : string, font: string) : number {
+    static calculateTextWidth(text: string, font: string): number {
         const context = Renderer._calculationCanvas.getContext("2d");
         context.font = font;
         const metrics = context.measureText(text);
         return metrics.width;
     }
 
-    static print(msg: string, x: number, y: number, font: Font) : void {
+    static print(msg: string, x: number, y: number, font: Font): void {
 
         if (font.style) {
             Renderer._ctx.font = `${font.style} ${font.size}px ${font.family}`;
@@ -126,7 +138,7 @@ export class Renderer {
         }
 
         if (font.color) {
-            Renderer._ctx.fillStyle = ColorUtils.RGBtoHex(font.color.red,font.color.green,font.color.blue);
+            Renderer._ctx.fillStyle = ColorUtils.RGBtoHex(font.color.red, font.color.green, font.color.blue);
         } else {
             Renderer._ctx.fillStyle = "#000000";
         }
@@ -139,14 +151,14 @@ export class Renderer {
         Renderer.setAlpha(1);
     }
 
-    static getLines(text : string, maxWidth : number) : Array<string> {
-        let words : string [] = text.split(" ");
-        let lines : Array<string> = [];
-        let currentLine : string = words[0];
+    static getLines(text: string, maxWidth: number): Array<string> {
+        let words: string [] = text.split(" ");
+        let lines: Array<string> = [];
+        let currentLine: string = words[0];
 
-        for (let i : number = 1; i < words.length; i++) {
-            let word : string = words[i];
-            let width : number = Renderer._ctx.measureText(currentLine + " " + word).width;
+        for (let i: number = 1; i < words.length; i++) {
+            let word: string = words[i];
+            let width: number = Renderer._ctx.measureText(currentLine + " " + word).width;
             if (width < maxWidth) {
                 currentLine += " " + word;
             } else {
@@ -158,16 +170,16 @@ export class Renderer {
         return lines;
     }
 
-    static fillAndClosePath() : void {
+    static fillAndClosePath(): void {
         Renderer._ctx.fill();
         Renderer._ctx.closePath();
     }
 
-    static beginPath() : void {
+    static beginPath(): void {
         Renderer._ctx.beginPath();
     }
 
-    static circle(x : number, y: number, radius: number, color: Color) : void {
+    static circle(x: number, y: number, radius: number, color: Color): void {
         Renderer._ctx.beginPath();
 
         Renderer.setColor(color);
@@ -180,7 +192,7 @@ export class Renderer {
         Renderer.setAlpha(1);
     }
 
-    static line (x1 : number, y1: number, x2: number, y2: number, width :number, color: Color ) : void {
+    static line(x1: number, y1: number, x2: number, y2: number, width: number, color: Color): void {
         Renderer._ctx.beginPath();
 
         Renderer._ctx.moveTo(x1, y1);
@@ -189,7 +201,8 @@ export class Renderer {
         Renderer._ctx.strokeStyle = ColorUtils.RGBtoHex(color.red, color.green, color.blue);
         Renderer._ctx.stroke();
     }
-    static rect(x: number, y: number, width: number, height: number, color: Color) : void {
+
+    static rect(x: number, y: number, width: number, height: number, color: Color): void {
 
         Renderer._ctx.beginPath();
 
@@ -208,35 +221,35 @@ export class Renderer {
         Renderer.setAlpha(1);
     }
 
-    static setAlpha(alpha: number) : void {
+    static setAlpha(alpha: number): void {
         Renderer._ctx.globalAlpha = alpha;
     }
 
-    static getCanvasWidth() : number{
+    static getCanvasWidth(): number {
         return Renderer._canvas.width;
     }
 
-    static getCanvasHeight() : number {
+    static getCanvasHeight(): number {
         return Renderer._canvas.height;
     }
 
-    static saveContext() : void {
+    static saveContext(): void {
         Renderer._ctx.save();
     }
 
-    static restoreContext() : void {
+    static restoreContext(): void {
         Renderer._ctx.restore();
     }
 
-    static enableImageSmoothing() : void {
+    static enableImageSmoothing(): void {
         Renderer._ctx.imageSmoothingEnabled = true;
     }
 
-    static disableImageSmoothing() : void {
+    static disableImageSmoothing(): void {
         Renderer._ctx.imageSmoothingEnabled = false;
     }
 
-    static translate(x: number, y:number): void {
+    static translate(x: number, y: number): void {
         Renderer._ctx.translate(x, y);
     }
 
@@ -256,11 +269,11 @@ export class Renderer {
         Renderer._ctx.fillRect(x, y, width, height);
     }
 
-    static createImageData(canvasWidth: number, canvasHeight: number) : ImageData {
+    static createImageData(canvasWidth: number, canvasHeight: number): ImageData {
         return Renderer._ctx.createImageData(canvasWidth, canvasHeight);
     }
 
     static putImageData(imageData: ImageData, x: number, y: number) {
-        Renderer._ctx.putImageData(imageData, x,y);
+        Renderer._ctx.putImageData(imageData, x, y);
     }
 }

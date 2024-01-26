@@ -22,8 +22,11 @@ export class Camera {
         this._xDir = xDir;
         this._yDir = yDir;
         this._fov = fov;
+
         this._xPlane = MathUtils.rotateVector(this._xDir, this._yDir, -Math.PI / 2).x * fov;
         this._yPlane = MathUtils.rotateVector(this._xDir, this._yDir, -Math.PI / 2).y * fov;
+
+
     }
 
     move(moveX: number, moveY: number): void {

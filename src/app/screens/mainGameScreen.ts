@@ -33,6 +33,8 @@ import {CameraComponent} from "../../lib/ecs/components/rendering/cameraComponen
 import {AiSystem} from "../../lib/ecs/system/entity/aiSystem";
 import {AiComponent, MovementStyle} from "../../lib/ecs/components/ai/aiComponent";
 import {MovementSystem} from "../../lib/ecs/system/entity/movementSystem";
+import {Renderer} from "../../lib/rendering/renderer";
+import {Colors} from "../../lib/utils/colorUtils";
 
 
 export class MainGameScreen implements GameScreen {
@@ -42,6 +44,7 @@ export class MainGameScreen implements GameScreen {
     private _renderSystems: Array<GameRenderSystem> = [];
     private _gameEntityRegistry: GameEntityRegistry = GameEntityRegistry.getInstance();
     private _worldMap : WorldMap = WorldMap.getInstance();
+    private _player: GameEntity;
 
     onEnter(): void {
 
@@ -130,17 +133,21 @@ export class MainGameScreen implements GameScreen {
             skyColor: new Color(40, 40, 40),
             wallTranslationTable: wallTranslationTable,
             width: 10,
-            items: this.buildItems(),
+         //   items: this.buildItems(),
             npcs: this.buildNpcs()
 
         });
 
-        let player : GameEntity = new GameEntityBuilder("player")
-            .addComponent(new CameraComponent(new Camera(2, 2, 0, 1, 0.66)))
+        let fovDegrees = 66;
+        let fovRadians = fovDegrees * (Math.PI / 180); // Convert to radians
+        let camera = new Camera(2, 2, 1, 1, Math.tan(fovRadians / 2));
+
+        this._player = new GameEntityBuilder("player")
+            .addComponent(new CameraComponent(camera))
             .addComponent(new VelocityComponent(0,0))
             .build();
 
-        this._gameEntityRegistry.registerSingleton(player);
+        this._gameEntityRegistry.registerSingleton(this._player);
     }
 
     buildItems() : Array<GameEntity> {
@@ -180,12 +187,13 @@ export class MainGameScreen implements GameScreen {
         animation.get("walking").push(require("../../assets/skeleton1.png"));
         animation.get("walking").push(require("../../assets/skeleton3.png"));
 
+
         gameEntities.push(new GameEntityBuilder("skeleton")
             .addComponent(new ItemComponent())
             .addComponent(new DistanceComponent())
-            .addComponent(new PositionComponent(2,2))
+            .addComponent(new PositionComponent(5,7))
             .addComponent(new DistanceComponent())
-            .addComponent(new AiComponent(MovementStyle.follow, false))
+         //   .addComponent(new AiComponent(MovementStyle.follow, false))
             .addComponent(new AnimatedSpriteComponent(new AnimatedSprite(
                 animation,
                 32,32,"default"
@@ -271,6 +279,13 @@ export class MainGameScreen implements GameScreen {
             renderSystem.process();
         });
 
+        let cameraComponent: CameraComponent = this._player.getComponent("camera") as CameraComponent;
+
+        Renderer.print(`xPos: ${Math.floor(cameraComponent.xPos)} yPos: ${Math.floor(cameraComponent.yPos)} xPlane: ${Math.floor(cameraComponent.xPlane)} yPlane: ${Math.floor(cameraComponent.yPlane)} xDir: ${Math.floor(cameraComponent.xDir)} yDir: ${Math.floor(cameraComponent.yDir)}`, 50, 50, {
+            family: "Arial",
+            size: 20,
+            color: Colors.RED()
+        });
 
     }
 }
