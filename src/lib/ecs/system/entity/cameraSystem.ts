@@ -1,7 +1,7 @@
 import {GameSystem} from "../../gameSystem";
 import {GameEntity} from "../../gameEntity";
 import {VelocityComponent} from "../../components/velocityComponent";
-import {Performance} from "../../../rendering/rayCaster/performance";
+import {RenderPerformance} from "../../../rendering/rayCaster/renderPerformance";
 import {CameraComponent} from "../../components/rendering/cameraComponent";
 
 export class CameraSystem implements GameSystem {
@@ -12,7 +12,7 @@ export class CameraSystem implements GameSystem {
 
         if (gameEntity.hasComponent("camera")) {
 
-            let turnSpeed : number = this._turnSpeed * Performance.deltaTime;
+            let turnSpeed : number = this._turnSpeed * RenderPerformance.deltaTime;
 
             let camera: CameraComponent = gameEntity.getComponent("camera") as CameraComponent;
             let velocity: VelocityComponent = gameEntity.getComponent("velocity") as VelocityComponent;

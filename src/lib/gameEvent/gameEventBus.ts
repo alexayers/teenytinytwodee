@@ -23,6 +23,7 @@ export class GameEventBus {
                 try {
                     listener(gameEvent);
                 } catch (e) {
+                    console.error(e);
                     logger(LogType.ERROR,"Incorrectly defined handler.");
                 }
             }
