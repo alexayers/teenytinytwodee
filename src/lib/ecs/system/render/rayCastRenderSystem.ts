@@ -5,7 +5,7 @@ import {GameEntityRegistry} from "../../../registries/gameEntityRegistry";
 import {GameEntity} from "../../gameEntity";
 import {Color} from "../../../primatives/color";
 import {Renderer} from "../../../rendering/renderer";
-import {Performance} from "../../../rendering/rayCaster/performance";
+import {RenderPerformance} from "../../../rendering/rayCaster/renderPerformance";
 import {CameraComponent} from "../../components/rendering/cameraComponent";
 import {Game} from "../../../../app/main";
 import {AnimatedSpriteComponent} from "../../components/rendering/animatedSpriteComponent";
@@ -32,7 +32,7 @@ export class RayCastRenderSystem implements GameRenderSystem {
 
         let player : GameEntity = this._gameEntityRegistry.getSingleton("player");
 
-        Performance.updateFrameTimes();
+        RenderPerformance.updateFrameTimes();
         this.moveAllDoors();
 
         let camera: CameraComponent = player.getComponent("camera") as CameraComponent;
