@@ -353,13 +353,10 @@ export class RayCaster {
                 let spriteHeight: number = Math.abs(Math.floor(Renderer.getCanvasHeight() / transformY));
                 let drawStartY: number = -spriteHeight / 2 + Math.round(Renderer.getCanvasHeight() / 2);
 
-
-
                 let spriteWidth: number = Math.abs(Math.floor(Renderer.getCanvasHeight() / transformY));
                 let drawStartX: number = Math.floor(-spriteWidth / 2 + spriteScreenX);
 
                 let drawEndX: number = drawStartX + spriteWidth;
-
 
 
                 // Clipping calculations to render only the visible part of the sprite.
@@ -373,7 +370,7 @@ export class RayCaster {
                     drawEndX = Renderer.getCanvasWidth() + spriteWidth;
                 }
 
-
+                console.log(`drawStartX: ${drawStartX} drawEndX: ${drawEndX}` );
 
                 // This ensures we don't draw sprites the player can't actually see.
                 for (let stripe: number = drawStartX; stripe <= drawEndX; stripe++) {
@@ -386,7 +383,6 @@ export class RayCaster {
                         }
                     }
                 }
-
 
 
                 // Render clipped image of the sprite.
@@ -405,9 +401,10 @@ export class RayCaster {
                         drawWidth = 0;
                     }
 
+                    drawXStart = 0;
+                    drawXEnd = 32;
+
                     Renderer.renderClippedImage(sprites[order[i]].currentImage(), drawXStart, 0, drawXEnd, sprites[order[i]].height, clipStartX, drawStartY, drawWidth, spriteHeight);
-
-
                 }
             }
         }

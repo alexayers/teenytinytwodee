@@ -35,6 +35,7 @@ import {AiComponent, MovementStyle} from "../../lib/ecs/components/ai/aiComponen
 import {MovementSystem} from "../../lib/ecs/system/entity/movementSystem";
 import {Renderer} from "../../lib/rendering/renderer";
 import {Colors} from "../../lib/utils/colorUtils";
+import {MistRenderSystem} from "../../lib/ecs/system/render/mistRenderSystem";
 
 
 export class MainGameScreen implements GameScreen {
@@ -133,7 +134,7 @@ export class MainGameScreen implements GameScreen {
             skyColor: new Color(40, 40, 40),
             wallTranslationTable: wallTranslationTable,
             width: 10,
-            items: this.buildItems(),
+         //   items: this.buildItems(),
             npcs: this.buildNpcs()
 
         });
@@ -193,7 +194,8 @@ export class MainGameScreen implements GameScreen {
             .addComponent(new DistanceComponent())
             .addComponent(new PositionComponent(5,7))
             .addComponent(new DistanceComponent())
-         //   .addComponent(new AiComponent(MovementStyle.follow, false))
+            .addComponent(new WallComponent())
+            .addComponent(new AiComponent(MovementStyle.follow, false))
             .addComponent(new AnimatedSpriteComponent(new AnimatedSprite(
                 animation,
                 32,32,"default"

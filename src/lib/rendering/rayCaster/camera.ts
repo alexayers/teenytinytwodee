@@ -3,6 +3,7 @@ import {GameEntity} from "../../ecs/gameEntity";
 import {DoorComponent} from "../../ecs/components/doorComponent";
 import {Point} from "../../primatives/point";
 import {MathUtils} from "../../utils/mathUtils";
+import {DistanceComponent} from "../../ecs/components/distanceComponent";
 
 
 export class Camera {
@@ -14,6 +15,7 @@ export class Camera {
     private _fov: number;
     private _xPlane: number;
     private _yPlane: number;
+    private _worldMap : WorldMap = WorldMap.getInstance();
 
     constructor(xPos: number, yPos: number, xDir: number, yDir: number, fov: number) {
 
@@ -31,8 +33,8 @@ export class Camera {
 
     move(moveX: number, moveY: number): void {
 
-        let worldMap : WorldMap = WorldMap.getInstance();
-        let gameEntity : GameEntity = worldMap.getEntityAtPosition(Math.floor(this._xPos + moveX),Math.floor(this._yPos));
+
+        let gameEntity : GameEntity = this._worldMap.getEntityAtPosition(Math.floor(this._xPos + moveX),Math.floor(this._yPos));
 
         if (!gameEntity) {
             return;
@@ -54,7 +56,7 @@ export class Camera {
             }
         }
 
-        gameEntity = worldMap.getEntityAtPosition(Math.floor(this._xPos),Math.floor(this._yPos + moveY))
+        gameEntity = this._worldMap.getEntityAtPosition(Math.floor(this._xPos),Math.floor(this._yPos + moveY))
 
         if (gameEntity.hasComponent("floor")) {
             this._yPos += moveY;
@@ -71,7 +73,21 @@ export class Camera {
     }
 
     private npcPresent() {
-        return false;
+       let gameEntities:Array<GameEntity>= this._worldMap.getGameEntities();
+
+       for (const gameEntity of gameEntities) {
+           if (gameEntity.hasComponent("wall")) {
+
+               let distance : DistanceComponent = gameEntity.getComponent("distance") as DistanceComponent;
+               if (distance.distance <= 1) {
+                    console.log(distance.distance);
+                   return false;
+               }
+
+           }
+       }
+
+       return false;
     }
 
     rotate(angle: number): void {

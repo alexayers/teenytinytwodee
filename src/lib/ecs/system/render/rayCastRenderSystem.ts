@@ -20,10 +20,10 @@ export class RayCastRenderSystem implements GameRenderSystem {
 
     constructor() {
         this._floor = new Image();
-        this._floor.src = require("../../../../assets/wall.png")
+        this._floor.src = require("../../../../assets/floor.png")
 
         this._ceiling = new Image();
-        this._ceiling.src = require("../../../../assets/door.png")
+        this._ceiling.src = require("../../../../assets/ceiling.png")
 
         this._rayCaster = new RayCaster(this._floor,this._ceiling);
     }
