@@ -37,6 +37,7 @@ import {Renderer} from "../../lib/rendering/renderer";
 import {Colors} from "../../lib/utils/colorUtils";
 import {MistRenderSystem} from "../../lib/ecs/system/render/mistRenderSystem";
 import {LightSourceComponent} from "../../lib/ecs/components/rendering/lightSourceComponent";
+import {PushWallComponent} from "../../lib/ecs/components/pushWallComponent";
 
 
 export class MainGameScreen implements GameScreen {
@@ -100,6 +101,7 @@ export class MainGameScreen implements GameScreen {
         let torch: GameEntity = new GameEntityBuilder("torch")
             .addComponent(new WallComponent())
            .addComponent(new LightSourceComponent(5))
+            .addComponent(new PushWallComponent())
             .addComponent(new SpriteComponent(new Sprite(128,128, require("../../assets/torch.png"))))
             .build();
 

@@ -1,4 +1,4 @@
-import {GameSystem} from "../../gameSystem";
+import {GameSystem, processComponents} from "../../gameSystem";
 import {DoorState, WorldMap} from "../../../rendering/rayCaster/worldMap";
 import {GameEntity} from "../../gameEntity";
 import {Camera} from "../../../rendering/rayCaster/camera";
@@ -8,15 +8,14 @@ import {CameraComponent} from "../../components/rendering/cameraComponent";
 export class InteractionSystem implements GameSystem {
 
     private _worldMap: WorldMap = WorldMap.getInstance();
+
+
+    @processComponents(["camera", "interaction"], ["interaction"])
     processEntity(gameEntity: GameEntity): void {
 
-        if (gameEntity.hasComponent("camera") && gameEntity.hasComponent("interaction")) {
+        let camera: CameraComponent = gameEntity.getComponent("camera") as CameraComponent;
+        this.interact(camera.camera);
 
-            let camera: CameraComponent = gameEntity.getComponent("camera") as CameraComponent;
-
-            this.interact(camera.camera);
-            gameEntity.removeComponent("interaction");
-        }
 
 
     }

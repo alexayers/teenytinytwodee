@@ -4,6 +4,7 @@ import {DoorComponent} from "../../ecs/components/doorComponent";
 import {Point} from "../../primatives/point";
 import {MathUtils} from "../../utils/mathUtils";
 import {DistanceComponent} from "../../ecs/components/distanceComponent";
+import {PushWallComponent} from "../../ecs/components/pushWallComponent";
 
 
 export class Camera {
@@ -54,6 +55,12 @@ export class Camera {
             if (door.isOpen()) {
                 this._xPos += moveX;
             }
+        } else if (gameEntity.hasComponent("pushWall")) {
+            let pushWallComponent : PushWallComponent = gameEntity.getComponent("pushWall") as PushWallComponent;
+
+            if (pushWallComponent.isWallOpen()) {
+                this._xPos += moveX;
+            }
         }
 
         gameEntity = this._worldMap.getEntityAtPosition(Math.floor(this._xPos),Math.floor(this._yPos + moveY))
@@ -67,6 +74,12 @@ export class Camera {
 
             if (door.isOpen()) {
                 this._yPos += moveY;
+            }
+        } else if (gameEntity.hasComponent("pushWall")) {
+            let pushWallComponent : PushWallComponent = gameEntity.getComponent("pushWall") as PushWallComponent;
+
+            if (pushWallComponent.isWallOpen()) {
+                this._xPos += moveX;
             }
         }
 
