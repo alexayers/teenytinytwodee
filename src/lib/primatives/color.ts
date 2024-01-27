@@ -47,9 +47,7 @@ export class Color {
         this._alpha = value;
     }
 
-    public toString() : string {
-        return ColorUtils.RGBtoHex(this._red, this._green, this._blue);
-    }
+
 
 
 }

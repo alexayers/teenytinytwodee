@@ -17,7 +17,7 @@ import {GlobalState} from "../../lib/application/globalState";
 import {InteractionComponent} from "../../lib/ecs/components/interactionComponent";
 import {ScreenChangeEvent} from "../../lib/gameEvent/screenChangeEvent";
 import {GameEventBus} from "../../lib/gameEvent/gameEventBus";
-import {Performance} from "../../lib/rendering/rayCaster/performance";
+import {RenderPerformance} from "../../lib/rendering/rayCaster/renderPerformance";
 import {CameraSystem} from "../../lib/ecs/system/entity/cameraSystem";
 import {InteractionSystem} from "../../lib/ecs/system/entity/interactionSystem";
 import {PickUpSystem} from "../../lib/ecs/system/entity/pickUpSystem";
@@ -36,6 +36,7 @@ import {MovementSystem} from "../../lib/ecs/system/entity/movementSystem";
 import {Renderer} from "../../lib/rendering/renderer";
 import {Colors} from "../../lib/utils/colorUtils";
 import {MistRenderSystem} from "../../lib/ecs/system/render/mistRenderSystem";
+import {LightSourceComponent} from "../../lib/ecs/components/rendering/lightSourceComponent";
 
 
 export class MainGameScreen implements GameScreen {
@@ -46,6 +47,13 @@ export class MainGameScreen implements GameScreen {
     private _gameEntityRegistry: GameEntityRegistry = GameEntityRegistry.getInstance();
     private _worldMap : WorldMap = WorldMap.getInstance();
     private _player: GameEntity;
+    private _moveSway: number = 0;
+    private _updateSway: boolean = false;
+    private _moves: number = 0;
+    private _camera:Camera;
+    private _lastXPos: number;
+    private _lastYPos: number;
+    private holdingItemSprite: Sprite = new Sprite(256,256, require("../../assets/sword.png"));
 
     onEnter(): void {
 
@@ -89,6 +97,12 @@ export class MainGameScreen implements GameScreen {
             .addComponent(new SpriteComponent(new Sprite(128,128, require("../../assets/wall.png"))))
             .build();
 
+        let torch: GameEntity = new GameEntityBuilder("torch")
+            .addComponent(new WallComponent())
+           .addComponent(new LightSourceComponent(5))
+            .addComponent(new SpriteComponent(new Sprite(128,128, require("../../assets/torch.png"))))
+            .build();
+
         let floor: GameEntity = new GameEntityBuilder("floor")
             .addComponent(new FloorComponent())
             .build();
@@ -111,7 +125,7 @@ export class MainGameScreen implements GameScreen {
             1, 0, 0, 0, 3, 0, 0, 0, 0, 1,
             1, 0, 0, 0, 1, 0, 0, 0, 0, 1,
             1, 1, 1, 0, 1, 1, 1, 3, 1, 1,
-            1, 0, 1, 0, 1, 0, 0, 0, 0, 1,
+            1, 0, 1, 0, 2, 0, 0, 0, 0, 1,
             1, 0, 1, 0, 1, 1, 1, 0, 0, 1,
             1, 0, 1, 0, 0, 0, 0, 0, 0, 1,
             1, 0, 0, 0, 1, 0, 1, 0, 0, 1,
@@ -121,30 +135,33 @@ export class MainGameScreen implements GameScreen {
 
         let wallTranslationTable: Map<number, GameEntity> = new Map<number, GameEntity>();
 
-        wallTranslationTable.set(3, door);
-        wallTranslationTable.set(1, wall);
+
+
         wallTranslationTable.set(0, floor);
+        wallTranslationTable.set(1, wall);
+        wallTranslationTable.set(2, torch);
+        wallTranslationTable.set(3, door);
 
 
         this._worldMap.loadMap({
             floorColor: new Color(74, 67, 57),
             wallGrid: wallGrid,
             height: 10,
-            lightRange: 8,
+            lightRange: 5,
             skyColor: new Color(40, 40, 40),
             wallTranslationTable: wallTranslationTable,
             width: 10,
          //   items: this.buildItems(),
-            npcs: this.buildNpcs()
+       //     npcs: this.buildNpcs()
 
         });
 
         let fovDegrees = 66;
         let fovRadians = fovDegrees * (Math.PI / 180); // Convert to radians
-        let camera = new Camera(2, 2, 1, 1, Math.tan(fovRadians / 2));
+        this._camera = new Camera(2, 2, 1, 1, Math.tan(fovRadians / 2));
 
         this._player = new GameEntityBuilder("player")
-            .addComponent(new CameraComponent(camera))
+            .addComponent(new CameraComponent(this._camera))
             .addComponent(new VelocityComponent(0,0))
             .build();
 
@@ -207,7 +224,7 @@ export class MainGameScreen implements GameScreen {
     }
 
     keyboard(): void {
-        let moveSpeed : number = this._moveSpeed * Performance.deltaTime;
+        let moveSpeed : number = this._moveSpeed * RenderPerformance.deltaTime;
         let moveX : number = 0;
         let moveY : number = 0;
 
@@ -220,11 +237,15 @@ export class MainGameScreen implements GameScreen {
         if (GlobalState.getState(`KEY_${KeyboardInput.UP}`)) {
             moveX += camera.xDir;
             moveY += camera.yDir;
+            this._updateSway = true;
+            this._moves++;
         }
 
         if (isKeyDown(KeyboardInput.DOWN)) {
             moveX -= camera.xDir;
             moveY -= camera.yDir;
+            this._updateSway = true;
+            this._moves++;
         }
         if (isKeyDown(KeyboardInput.LEFT)) {
             velocity.rotateLeft = true;
@@ -248,6 +269,9 @@ export class MainGameScreen implements GameScreen {
 
         velocity.velX = moveX;
         velocity.velY = moveY;
+
+        this._lastXPos = this._camera.xPos;
+        this._lastYPos = this._camera.yPos;
     }
 
 
@@ -266,6 +290,13 @@ export class MainGameScreen implements GameScreen {
             });
         });
 
+
+
+        if (this._camera.xPos == this._lastXPos && this._camera.yPos == this._lastYPos) {
+            this._updateSway = false;
+            this._moves = 0;
+        }
+
     }
 
     mouseClick(x: number, y: number, mouseButton : MouseButton): void {
@@ -277,17 +308,59 @@ export class MainGameScreen implements GameScreen {
     }
 
     renderLoop(): void {
+
+
         this._renderSystems.forEach((renderSystem : GameRenderSystem) =>{
             renderSystem.process();
         });
 
+        let xOffset: number = Math.sin(this._moveSway / 2) * 40,
+            yOffset: number = Math.cos(this._moveSway) * 30;
+
+
+        this.holdingItemSprite.render(380 + xOffset, 300 + yOffset, 256, 256);
+
+        this.sway();
+
+        Renderer.rect(0, 0, Renderer.getCanvasWidth(), 70, Colors.BLACK());
+        Renderer.rect(0, Renderer.getCanvasHeight()-100, Renderer.getCanvasWidth(), 90, Colors.BLACK());
+
         let cameraComponent: CameraComponent = this._player.getComponent("camera") as CameraComponent;
 
+        /*
         Renderer.print(`xPos: ${Math.floor(cameraComponent.xPos)} yPos: ${Math.floor(cameraComponent.yPos)} xPlane: ${Math.floor(cameraComponent.xPlane)} yPlane: ${Math.floor(cameraComponent.yPlane)} xDir: ${Math.floor(cameraComponent.xDir)} yDir: ${Math.floor(cameraComponent.yDir)}`, 50, 50, {
             family: "Arial",
             size: 20,
             color: Colors.RED()
         });
+
+         */
+
+    }
+
+    sway(): void {
+        if (!this._updateSway) {
+
+            let sway: number = this._moveSway % (Math.PI * 2);
+            let diff: number = 0;
+            if (sway - Math.PI <= 0) {
+                diff = -Math.PI / 30;
+            } else {
+                diff = Math.PI / 30;
+            }
+
+            if (sway + diff < 0 || sway + diff > Math.PI * 2) {
+                this._moveSway -= sway;
+            } else {
+                this._moveSway += diff;
+            }
+            return;
+        }
+
+        if (this._moves > 1) {
+            this._moveSway += Math.PI / 25;
+            this._moveSway %= Math.PI * 8;
+        }
 
     }
 }

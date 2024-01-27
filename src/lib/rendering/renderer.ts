@@ -2,7 +2,7 @@ import {Color} from "../primatives/color";
 import {ConfigurationManager} from "../application/configuration";
 import {logger, LogType} from "../utils/loggerUtils";
 import {Font} from "../rendering/font";
-import {ColorUtils} from "../utils/colorUtils";
+import {Colors, ColorUtils} from "../utils/colorUtils";
 
 
 export class Renderer {
@@ -276,4 +276,30 @@ export class Renderer {
     static putImageData(imageData: ImageData, x: number, y: number) {
         Renderer._ctx.putImageData(imageData, x, y);
     }
+
+
+    static getPixelColor(x: number, y: number) : Color {
+        let imageData: ImageData = Renderer._ctx.getImageData(0, 0, Renderer.getCanvasWidth(), Renderer.getCanvasHeight());
+        let data: Uint8ClampedArray = imageData.data; // an array of RGBA values
+
+        let index: number = (x + y * Renderer.getCanvasWidth()) * 4;
+
+        return new Color(data[index],data[index + 1],data[index + 2],data[index + 3] / 255);
+       // return Colors.WHITE();
+    }
+
+    static setPixelColor(x: number, y: number, color: Color) : void {
+        let imageData: ImageData = Renderer._ctx.getImageData(0, 0, Renderer.getCanvasWidth(), Renderer.getCanvasHeight());
+        let data: Uint8ClampedArray = imageData.data; // an array of RGBA values
+
+
+        let index : number = (x + y * Renderer.getCanvasWidth()) * 4;
+        data[index] = color.red;
+        data[index + 1] = color.green;
+        data[index + 2] = color.blue;
+        data[index + 3] = color.alpha; // set alpha to 255 for opaque
+        Renderer._ctx.putImageData(imageData, 0, 0);
+    }
+
+
 }

@@ -11,6 +11,7 @@ import {Color} from "../../primatives/color";
 import {SpriteComponent} from "../../ecs/components/rendering/spriteComponent";
 import {AnimatedSprite} from "../animatedSprite";
 import {AnimatedSpriteComponent} from "../../ecs/components/rendering/animatedSpriteComponent";
+import {LightSourceComponent} from "../../ecs/components/rendering/lightSourceComponent";
 
 enum WallSide {
     X_SIDE,
@@ -25,6 +26,7 @@ export class RayCaster {
     private _worldMap: WorldMap = WorldMap.getInstance();
     private _floor: HTMLImageElement;
     private _ceiling: HTMLImageElement;
+    private readonly DOOR_FRAME:number = 4;
 
 
     constructor(floor: HTMLImageElement, ceiling: HTMLImageElement) {
@@ -106,7 +108,7 @@ export class RayCaster {
                         } else {
                             mapX += stepX;
                             side = WallSide.X_SIDE;
-                            rayTex = 4;
+                            rayTex = this.DOOR_FRAME;
                             wallYOffset = 0;
                         }
                     } else {
@@ -124,7 +126,7 @@ export class RayCaster {
                         } else {
                             mapY += stepY;
                             side = WallSide.Y_SIDE;
-                            rayTex = 4;
+                            rayTex = this.DOOR_FRAME;
                             wallXOffset = 0;
                         }
                     }
@@ -153,15 +155,18 @@ export class RayCaster {
                     let adjacentGameEntityAcross: GameEntity = this._worldMap.getEntityAtPosition(mapX - stepX, mapY)
 
                     if (side == WallSide.Y_SIDE && adjacentGameEntityUp.hasComponent("door")) {
-                        rayTex = 4;
+                        rayTex = this.DOOR_FRAME;
                     } else if (side == WallSide.X_SIDE && adjacentGameEntityAcross.hasComponent("door")) {
-                        rayTex = 4;
+                        rayTex = this.DOOR_FRAME;
                     }
 
                     hasHitWall = true;
                 }
             }
         }
+
+
+
 
         // Calculate perpendicular wall distance to avoid fisheye effect
         perpWallDist = this.calculatePerpWall(side, mapX, mapY, camera, wallXOffset, wallYOffset, stepX, stepY, rayDirX, rayDirY);
@@ -172,6 +177,8 @@ export class RayCaster {
         // Calculate the height of the wall slice to be drawn on screen
         let lineHeight: number = Math.round(Renderer.getCanvasHeight() / perpWallDist);
         let drawStart: number = -lineHeight / 2 + Math.round(Renderer.getCanvasHeight() / 2);
+
+
 
         // Calculate the exact position where the wall is hit
         if (side == WallSide.X_SIDE) {
@@ -188,12 +195,21 @@ export class RayCaster {
         }
 
         // If the texture is a door frame, get the door frame entity
-        if (rayTex == 4) {
+        if (rayTex == this.DOOR_FRAME) {
             gameEntity = GameEntityRegistry.getInstance().getSingleton("doorFrame");
         }
 
         // Render the wall slice on screen
         this.renderWall(gameEntity, wallX, side, rayDirX, rayDirY, drawStart, lineHeight, x);
+
+/*
+        if (gameEntity.hasComponent("lightSource")) {
+            let lightSourceComponent: LightSourceComponent = gameEntity.getComponent("lightSource") as LightSourceComponent;
+            let lightIntensity = this.calculateLightIntensity(perpWallDist, lightSourceComponent.lightStrength);
+            this.applyLighting(x, drawStart, lineHeight, lightIntensity);
+        }
+
+ */
 
         // Render shadows based on the wall distance
         this.renderShadows(perpWallDist, x, drawStart, lineHeight);
@@ -264,9 +280,9 @@ export class RayCaster {
         let lightRange: number = this._worldMap.worldDefinition.lightRange;
         let calculatedAlpha: number = Math.max((perpWallDist + 0.002) / lightRange, 0);
 
-        Renderer.rect(
-            x | 0, drawStart | 0, 1, lineHeight + 1, new Color(0, 0, 0, calculatedAlpha)
-        );
+        Renderer.rect(x | 0, drawStart | 0, 1, lineHeight + 1, new Color(0, 0, 0, calculatedAlpha));
+
+       // Renderer.rect(x | 0, drawStart | 0, 1, lineHeight + 1, new Color(245, 0, 0, calculatedAlpha));
     }
 
     /**
@@ -414,7 +430,6 @@ export class RayCaster {
         }
         this._transparentWall.length = 0;
     }
-
 
 
     prepareSprites(gameEntities: Array<GameEntity>, camera: Camera): { sprites: Array<AnimatedSprite>, spriteDistance: Array<number>, order: Array<number> } {
@@ -614,5 +629,33 @@ export class RayCaster {
             let tpWall: TransparentWall = new TransparentWall(camera, mapX, mapY, side, x, this._cameraXCoords);
             this._transparentWall.push(tpWall);
         }
+    }
+
+    private applyLighting(x: number, drawStart: number, lineHeight: number, lightIntensity: number) {
+        for (let y = drawStart; y < drawStart + lineHeight; y++) {
+            // Get the current color of the pixel.
+            let color : Color = Renderer.getPixelColor(x, y);
+
+            // Modify the color based on the light intensity.
+            color = this.modifyColorForLighting(color, lightIntensity);
+
+            // Set the pixel color with the modified lighting.
+            Renderer.setPixelColor(x, y, color);
+        }
+    }
+
+    modifyColorForLighting(color: Color, lightIntensity: number) : Color {
+        // Assuming color is an object with r, g, b values.
+        color.red = Math.min(color.red * lightIntensity, 255);
+        color.green = Math.min(color.green * lightIntensity, 255);
+        color.blue = Math.min(color.blue * lightIntensity, 255);
+        return color;
+    }
+
+    calculateLightIntensity(distance: number, strength: number) {
+        // A simple linear falloff of light intensity with distance.
+        // You might want to replace this with a more sophisticated falloff calculation.
+        let falloff = Math.max(0, 1 - (distance / strength));
+        return falloff;
     }
 }
