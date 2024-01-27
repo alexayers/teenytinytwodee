@@ -1,4 +1,4 @@
-import {Performance} from "./performance";
+import {RenderPerformance} from "./renderPerformance";
 import {GameEntity} from "../../ecs/gameEntity";
 import {DoorComponent} from "../../ecs/components/doorComponent";
 import {PushWallComponent} from "../../ecs/components/pushWallComponent";
@@ -98,7 +98,7 @@ export class WorldMap {
 
                 if (gameEntity.hasComponent("door")) { //Standard door
                     if (this.getDoorState(x, y) == DoorState.OPENING) {//Open doors
-                        this.setDoorOffset(x, y, this.getDoorOffset(x, y) + Performance.deltaTime / 100);
+                        this.setDoorOffset(x, y, this.getDoorOffset(x, y) + RenderPerformance.deltaTime / 100);
 
                         if (this.getDoorOffset(x, y) > 1) {
                             this.setDoorOffset(x, y, 1);
@@ -116,7 +116,7 @@ export class WorldMap {
                             }, 5000);//TO DO: Don't close when player is in tile
                         }
                     } else if (this.getDoorState(x, y) == DoorState.CLOSING) {
-                        this.setDoorOffset(x, y, this.getDoorOffset(x, y) - Performance.deltaTime / 100);
+                        this.setDoorOffset(x, y, this.getDoorOffset(x, y) - RenderPerformance.deltaTime / 100);
 
                         if (this.getDoorOffset(x, y) < 0) {
                             this.setDoorOffset(x, y, 0);
@@ -128,7 +128,7 @@ export class WorldMap {
                     }
                 } else if (gameEntity.hasComponent("pushWall")) {
                     if (this.getDoorState(x, y) == DoorState.OPENING) {
-                        this.setDoorOffset(x, y, this.getDoorOffset(x, y) + Performance.deltaTime / 100);
+                        this.setDoorOffset(x, y, this.getDoorOffset(x, y) + RenderPerformance.deltaTime / 100);
 
                         if (this.getDoorOffset(x, y) > 2) {
                             this.setDoorOffset(x, y, 2);
