@@ -126,18 +126,16 @@ export class MainGameScreen implements GameScreen {
             1, 0, 0, 0, 1, 0, 0, 0, 0, 1,
             1, 0, 0, 0, 3, 0, 0, 0, 0, 1,
             1, 0, 0, 0, 1, 0, 0, 0, 0, 1,
-            1, 1, 1, 0, 1, 1, 1, 3, 1, 1,
+            1, 2, 1, 0, 1, 1, 1, 3, 1, 1,
             1, 0, 1, 0, 2, 0, 0, 0, 0, 1,
             1, 0, 1, 0, 1, 1, 1, 0, 0, 1,
-            1, 0, 1, 0, 0, 0, 0, 0, 0, 1,
+            1, 0, 1, 0, 0, 0, 0, 0, 0, 2,
             1, 0, 0, 0, 1, 0, 1, 0, 0, 1,
             1, 1, 1, 1, 1, 1, 1, 1, 1, 1];
 
 
 
         let wallTranslationTable: Map<number, GameEntity> = new Map<number, GameEntity>();
-
-
 
         wallTranslationTable.set(0, floor);
         wallTranslationTable.set(1, wall);
@@ -153,7 +151,7 @@ export class MainGameScreen implements GameScreen {
             skyColor: new Color(40, 40, 40),
             wallTranslationTable: wallTranslationTable,
             width: 10,
-         //   items: this.buildItems(),
+            items: this.buildItems(),
        //     npcs: this.buildNpcs()
 
         });

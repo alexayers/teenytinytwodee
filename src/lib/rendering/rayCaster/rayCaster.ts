@@ -12,6 +12,7 @@ import {SpriteComponent} from "../../ecs/components/rendering/spriteComponent";
 import {AnimatedSprite} from "../animatedSprite";
 import {AnimatedSpriteComponent} from "../../ecs/components/rendering/animatedSpriteComponent";
 import {LightSourceComponent} from "../../ecs/components/rendering/lightSourceComponent";
+import {Game} from "../../../app/main";
 
 enum WallSide {
     X_SIDE,
@@ -165,9 +166,6 @@ export class RayCaster {
             }
         }
 
-
-
-
         // Calculate perpendicular wall distance to avoid fisheye effect
         perpWallDist = this.calculatePerpWall(side, mapX, mapY, camera, wallXOffset, wallYOffset, stepX, stepY, rayDirX, rayDirY);
 
@@ -202,18 +200,13 @@ export class RayCaster {
         // Render the wall slice on screen
         this.renderWall(gameEntity, wallX, side, rayDirX, rayDirY, drawStart, lineHeight, x);
 
-/*
-        if (gameEntity.hasComponent("lightSource")) {
-            let lightSourceComponent: LightSourceComponent = gameEntity.getComponent("lightSource") as LightSourceComponent;
-            let lightIntensity = this.calculateLightIntensity(perpWallDist, lightSourceComponent.lightStrength);
-            this.applyLighting(x, drawStart, lineHeight, lightIntensity);
+        if (!gameEntity.hasComponent("lightSource")) {
+            // Render shadows based on the wall distance
+            this.renderShadows(perpWallDist, x, drawStart, lineHeight);
         }
 
- */
-
-        // Render shadows based on the wall distance
-        this.renderShadows(perpWallDist, x, drawStart, lineHeight);
     }
+
 
     renderWall(gameEntity: GameEntity, wallX: number, side: number, rayDirX: number, rayDirY: number, drawStart: number, lineHeight: number, x: number) {
         let sprite: SpriteComponent = gameEntity.getComponent("sprite") as SpriteComponent
@@ -281,8 +274,6 @@ export class RayCaster {
         let calculatedAlpha: number = Math.max((perpWallDist + 0.002) / lightRange, 0);
 
         Renderer.rect(x | 0, drawStart | 0, 1, lineHeight + 1, new Color(0, 0, 0, calculatedAlpha));
-
-       // Renderer.rect(x | 0, drawStart | 0, 1, lineHeight + 1, new Color(245, 0, 0, calculatedAlpha));
     }
 
     /**
@@ -386,7 +377,6 @@ export class RayCaster {
                     drawEndX = Renderer.getCanvasWidth() + spriteWidth;
                 }
 
-                console.log(`drawStartX: ${drawStartX} drawEndX: ${drawEndX}` );
 
                 // This ensures we don't draw sprites the player can't actually see.
                 for (let stripe: number = drawStartX; stripe <= drawEndX; stripe++) {
@@ -550,6 +540,11 @@ export class RayCaster {
                 floorY += floorStepY;
 
                 let distance : number = this.calculateDistance(x, y, canvasWidth, canvasHeight) / Renderer.getCanvasHeight();
+
+                if (this.isNearLight(cellX,cellY)) {
+                    distance = 0;
+                }
+
                 buffer[y * canvasWidth + x] = this.getColorFromTexture(floor, tx, ty, texWidth, distance);
                 buffer[(canvasHeight - y - 1) * canvasWidth + x] = this.getColorFromTexture(ceiling, tx, ty, texWidth, distance);
             }
@@ -631,31 +626,32 @@ export class RayCaster {
         }
     }
 
-    private applyLighting(x: number, drawStart: number, lineHeight: number, lightIntensity: number) {
-        for (let y = drawStart; y < drawStart + lineHeight; y++) {
-            // Get the current color of the pixel.
-            let color : Color = Renderer.getPixelColor(x, y);
+    private isNearLight(x: number, y: number) : boolean {
 
-            // Modify the color based on the light intensity.
-            color = this.modifyColorForLighting(color, lightIntensity);
+        let nearWall : GameEntity = this._worldMap.getEntityAtPosition(x + 1, y);
 
-            // Set the pixel color with the modified lighting.
-            Renderer.setPixelColor(x, y, color);
+        if (nearWall && nearWall.hasComponent("lightSource")) {
+            return true;
         }
-    }
 
-    modifyColorForLighting(color: Color, lightIntensity: number) : Color {
-        // Assuming color is an object with r, g, b values.
-        color.red = Math.min(color.red * lightIntensity, 255);
-        color.green = Math.min(color.green * lightIntensity, 255);
-        color.blue = Math.min(color.blue * lightIntensity, 255);
-        return color;
-    }
+        nearWall = this._worldMap.getEntityAtPosition(x - 1, y);
 
-    calculateLightIntensity(distance: number, strength: number) {
-        // A simple linear falloff of light intensity with distance.
-        // You might want to replace this with a more sophisticated falloff calculation.
-        let falloff = Math.max(0, 1 - (distance / strength));
-        return falloff;
+        if (nearWall && nearWall.hasComponent("lightSource")) {
+            return true;
+        }
+
+        nearWall = this._worldMap.getEntityAtPosition(x, y - 1);
+
+        if (nearWall && nearWall.hasComponent("lightSource")) {
+            return true;
+        }
+
+        nearWall = this._worldMap.getEntityAtPosition(x, y + 1);
+
+        if (nearWall && nearWall.hasComponent("lightSource")) {
+            return true;
+        }
+
+        return false;
     }
 }
