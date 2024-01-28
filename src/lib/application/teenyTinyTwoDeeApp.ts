@@ -23,7 +23,7 @@ export class TeenyTinyTwoDeeApp {
 
 
     constructor() {
-
+        document.body.requestPointerLock();
         ConfigurationManager.init(cfg);
         logger(LogType.INFO, "TeenyTinyTwoDeeApp V: 0.0.1");
 

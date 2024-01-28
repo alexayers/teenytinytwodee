@@ -174,8 +174,13 @@ export class RayCaster {
         // Store the perpendicular distance for later use in Z-buffering
         this._zBuffer[x] = perpWallDist;
 
+        // Check if the game entity has a 'tileHeight' component
+       // let tileHeight = gameEntity.hasComponent("tileHeight") ? gameEntity.getComponent("tileHeight").value : 1;
+
+        let tileHeight = 1;
+
         // Calculate the height of the wall slice to be drawn on screen
-        let lineHeight: number = Math.round(Renderer.getCanvasHeight() / perpWallDist);
+        let lineHeight: number = Math.round((Renderer.getCanvasHeight() / perpWallDist) * tileHeight);
         let drawStart: number = -lineHeight / 2 + Math.round(Renderer.getCanvasHeight() / 2);
 
 
@@ -391,7 +396,6 @@ export class RayCaster {
                         }
                     }
                 }
-
 
                 // Render clipped image of the sprite.
                 if (clipStartX != clipEndX && clipStartX < Renderer.getCanvasWidth() && clipEndX > 0) {
@@ -658,10 +662,6 @@ export class RayCaster {
 
         nearWall = this._worldMap.getEntityAtPosition(x, y + 1);
 
-        if (nearWall && nearWall.hasComponent("lightSource")) {
-            return true;
-        }
-
-        return false;
+        return nearWall && nearWall.hasComponent("lightSource");
     }
 }
