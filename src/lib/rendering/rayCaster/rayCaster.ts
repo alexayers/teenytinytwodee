@@ -26,11 +26,12 @@ export class RayCaster {
     private _transparentWall: Array<TransparentWall> = [];
     private _worldMap: WorldMap = WorldMap.getInstance();
     private _floor: HTMLImageElement;
+    private _floor2: HTMLImageElement;
     private _ceiling: HTMLImageElement;
     private readonly DOOR_FRAME:number = 4;
 
 
-    constructor(floor: HTMLImageElement, ceiling: HTMLImageElement) {
+    constructor(floor: HTMLImageElement,floor2: HTMLImageElement, ceiling: HTMLImageElement) {
         for (let x: number = 0; x < Renderer.getCanvasWidth(); x++) {
             let cameraX: number = 2 * x / Renderer.getCanvasWidth() - 1;
             this._cameraXCoords.push(cameraX);
@@ -38,6 +39,7 @@ export class RayCaster {
 
         this._floor = floor;
         this._ceiling = ceiling;
+        this._floor2 = floor2;
     }
 
     // Function to draw a wall from the perspective of the camera at a given screen X-coordinate
@@ -504,6 +506,7 @@ export class RayCaster {
     renderFloorsAndCeiling(dirX: number, dirY: number, planeX: number, planeY: number, posX: number, posY: number, texWidth: number, texHeight: number) {
 
         let floor: ImageData = this.preRenderTexture(this._floor, 32, 32);
+        let floor2: ImageData = this.preRenderTexture(this._floor2, 32, 32);
         let ceiling: ImageData = this.preRenderTexture(this._ceiling, 32, 32);
 
         let canvasWidth: number = Renderer.getCanvasWidth();
@@ -545,7 +548,12 @@ export class RayCaster {
                     distance = 0;
                 }
 
-                buffer[y * canvasWidth + x] = this.getColorFromTexture(floor, tx, ty, texWidth, distance);
+                if (cellX == 3 && cellY == 3) {
+                    buffer[y * canvasWidth + x] = this.getColorFromTexture(floor2, tx, ty, texWidth, distance);
+                } else {
+                    buffer[y * canvasWidth + x] = this.getColorFromTexture(floor, tx, ty, texWidth, distance);
+                }
+
                 buffer[(canvasHeight - y - 1) * canvasWidth + x] = this.getColorFromTexture(ceiling, tx, ty, texWidth, distance);
             }
         }
@@ -569,17 +577,19 @@ export class RayCaster {
         let r: number = data[baseIndex + 0];
         let g: number = data[baseIndex + 1];
         let b: number = data[baseIndex + 2];
-        let a: number = data[baseIndex + 3];
+        let a: number = 255;
 
         // Apply distance-based attenuation to RGB components
         // Assuming 'distance' is a value that increases with distance from the viewer
-        const attenuation = Math.max(1.0 - distance, 0); // 'someFactor' determines how quickly it darkens with distance
-        r *= attenuation;
-        g *= attenuation;
-        b *= attenuation;
+
+
+        const attenuation = Math.max(1.0 - distance, 0);
+        r = Math.min(Math.max(Math.round(r * attenuation), 0), 255);
+        g = Math.min(Math.max(Math.round(g * attenuation), 0), 255);
+        b = Math.min(Math.max(Math.round(b * attenuation), 0), 255);
 
         // Combine back into an integer
-        return (r << 16) | (g << 8) | b | (a << 24);
+        return (a << 24) | (r << 16) | (g << 8) | b;
     }
 
     combSort(order: Array<number>, dist: Array<number>): void {

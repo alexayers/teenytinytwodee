@@ -16,16 +16,20 @@ export class RayCastRenderSystem implements GameRenderSystem {
     private _worldMap : WorldMap = WorldMap.getInstance();
     private _gameEntityRegistry: GameEntityRegistry = GameEntityRegistry.getInstance();
     private _floor:HTMLImageElement;
+    private _floor2:HTMLImageElement;
     private _ceiling:HTMLImageElement;
 
     constructor() {
         this._floor = new Image();
         this._floor.src = require("../../../../assets/floor.png")
 
+        this._floor2 = new Image();
+        this._floor2.src = require("../../../../assets/water.png")
+
         this._ceiling = new Image();
         this._ceiling.src = require("../../../../assets/ceiling.png")
 
-        this._rayCaster = new RayCaster(this._floor,this._ceiling);
+        this._rayCaster = new RayCaster(this._floor,this._floor2,this._ceiling);
     }
 
     process(): void {
