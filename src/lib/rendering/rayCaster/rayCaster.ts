@@ -11,8 +11,8 @@ import {Color} from "../../primatives/color";
 import {SpriteComponent} from "../../ecs/components/rendering/spriteComponent";
 import {AnimatedSprite} from "../animatedSprite";
 import {AnimatedSpriteComponent} from "../../ecs/components/rendering/animatedSpriteComponent";
-import {LightSourceComponent} from "../../ecs/components/rendering/lightSourceComponent";
-import {Game} from "../../../app/main";
+import {TileHeightComponent} from "../../ecs/components/rendering/tileHeightComponent";
+import {CubeSpriteComponent, CubeSpriteSide} from "../../ecs/components/rendering/cubeSpriteComponent";
 
 enum WallSide {
     X_SIDE,
@@ -28,10 +28,10 @@ export class RayCaster {
     private _floor: HTMLImageElement;
     private _floor2: HTMLImageElement;
     private _ceiling: HTMLImageElement;
-    private readonly DOOR_FRAME:number = 4;
+    private readonly DOOR_FRAME: number = 4;
 
 
-    constructor(floor: HTMLImageElement,floor2: HTMLImageElement, ceiling: HTMLImageElement) {
+    constructor(floor: HTMLImageElement, floor2: HTMLImageElement, ceiling: HTMLImageElement) {
         for (let x: number = 0; x < Renderer.getCanvasWidth(); x++) {
             let cameraX: number = 2 * x / Renderer.getCanvasWidth() - 1;
             this._cameraXCoords.push(cameraX);
@@ -64,6 +64,7 @@ export class RayCaster {
         let wallX: number;
         let rayTex: number;
         let gameEntity: GameEntity;
+        let wallSideHit:CubeSpriteSide;
 
         // Initialize step and side distances for ray traversal
         let {
@@ -76,21 +77,27 @@ export class RayCaster {
         // Loop until a wall hit is detected
         while (!hasHitWall) {
 
+
             // Determine whether to step in the x or y direction
             if (sideDistX < sideDistY) {
                 sideDistX += deltaDistX;
                 mapX += stepX;
                 side = WallSide.X_SIDE;
+                wallSideHit = stepX > 0 ? CubeSpriteSide.WEST :CubeSpriteSide.EAST;
             } else {
                 sideDistY += deltaDistY;
                 mapY += stepY;
                 side = WallSide.Y_SIDE;
+                wallSideHit = stepY > 0 ? CubeSpriteSide.NORTH : CubeSpriteSide.SOUTH;
             }
 
             // Get the game entity at the new map position
             gameEntity = this._worldMap.getEntityAtPosition(mapX, mapY);
 
             if (!gameEntity.hasComponent("floor")) {
+
+
+
                 if (gameEntity.hasComponent("door") &&
                     this._worldMap.getDoorState(mapX, mapY) != DoorState.OPEN) {
                     hasHitWall = true;
@@ -144,11 +151,11 @@ export class RayCaster {
                 } else if (gameEntity.hasComponent("transparent")) {
                     if (side == WallSide.Y_SIDE) {
                         if (sideDistY - (deltaDistY / 2) < sideDistX) {
-                           this.processTransparentWall(camera,side, mapX, mapY, x);
+                            this.processTransparentWall(camera, side, mapX, mapY, x);
                         }
                     } else {
                         if (sideDistX - (deltaDistX / 2) < sideDistY) {
-                            this.processTransparentWall(camera,side, mapX, mapY, x);
+                            this.processTransparentWall(camera, side, mapX, mapY, x);
                         }
                     }
                 } else if (!gameEntity.hasComponent("door")
@@ -175,14 +182,22 @@ export class RayCaster {
         this._zBuffer[x] = perpWallDist;
 
         // Check if the game entity has a 'tileHeight' component
-       // let tileHeight = gameEntity.hasComponent("tileHeight") ? gameEntity.getComponent("tileHeight").value : 1;
+        //let tileHeight = gameEntity.hasComponent("tileHeight") ? gameEntity.getComponent("tileHeight") : 1;
 
         let tileHeight = 1;
 
+        if (gameEntity.hasComponent("tileHeight")) {
+            let tileHeightComponent : TileHeightComponent = gameEntity.getComponent("tileHeight") as TileHeightComponent;
+            tileHeight = tileHeightComponent.tileHeight;
+        }
+
+
         // Calculate the height of the wall slice to be drawn on screen
         let lineHeight: number = Math.round((Renderer.getCanvasHeight() / perpWallDist) * tileHeight);
-        let drawStart: number = -lineHeight / 2 + Math.round(Renderer.getCanvasHeight() / 2);
+        let drawStart: number;
 
+
+        drawStart = -lineHeight / 2 + Math.round(Renderer.getCanvasHeight() / 2);
 
 
         // Calculate the exact position where the wall is hit
@@ -205,7 +220,7 @@ export class RayCaster {
         }
 
         // Render the wall slice on screen
-        this.renderWall(gameEntity, wallX, side, rayDirX, rayDirY, drawStart, lineHeight, x);
+        this.renderWall(gameEntity, wallSideHit, wallX, side, rayDirX, rayDirY, drawStart, lineHeight, x);
 
         if (!gameEntity.hasComponent("lightSource")) {
             // Render shadows based on the wall distance
@@ -215,9 +230,18 @@ export class RayCaster {
     }
 
 
-    renderWall(gameEntity: GameEntity, wallX: number, side: number, rayDirX: number, rayDirY: number, drawStart: number, lineHeight: number, x: number) {
-        let sprite: SpriteComponent = gameEntity.getComponent("sprite") as SpriteComponent
-        let wallTex: Sprite = sprite.sprite;
+    renderWall(gameEntity: GameEntity, wallSideHit: CubeSpriteSide, wallX: number, side: number, rayDirX: number, rayDirY: number, drawStart: number, lineHeight: number, x: number) {
+
+        let wallTex: Sprite;
+
+        if (gameEntity.hasComponent("sprite")) {
+            let sprite: SpriteComponent = gameEntity.getComponent("sprite") as SpriteComponent
+            wallTex = sprite.sprite;
+        } else if (gameEntity.hasComponent("cubeSprite")) {
+            let cubeSpriteComponent: CubeSpriteComponent = gameEntity.getComponent("cubeSprite") as CubeSpriteComponent
+            wallTex = cubeSpriteComponent.sprite[wallSideHit];
+        }
+
 
         let texX: number = Math.floor(wallX * wallTex.image.width);
 
@@ -324,7 +348,7 @@ export class RayCaster {
         const gameEntities: Array<GameEntity> = this._worldMap.getGameEntities();
 
         // Calculate distance of each game entity from the camera and store their sprite components.
-        const { sprites, spriteDistance, order } = this.prepareSprites(gameEntities, camera);
+        const {sprites, spriteDistance, order} = this.prepareSprites(gameEntities, camera);
 
         // Sort sprites based on their distance from the camera.
         this.combSort(order, spriteDistance);
@@ -428,7 +452,11 @@ export class RayCaster {
     }
 
 
-    prepareSprites(gameEntities: Array<GameEntity>, camera: Camera): { sprites: Array<AnimatedSprite>, spriteDistance: Array<number>, order: Array<number> } {
+    prepareSprites(gameEntities: Array<GameEntity>, camera: Camera): {
+        sprites: Array<AnimatedSprite>,
+        spriteDistance: Array<number>,
+        order: Array<number>
+    } {
         let spriteDistance: Array<number> = [];
         let order: Array<number> = [];
         let sprites: Array<AnimatedSprite> = [];
@@ -453,7 +481,7 @@ export class RayCaster {
             sprites.push(animatedSpriteComponent.animatedSprite);
         }
 
-        return { sprites, spriteDistance, order };
+        return {sprites, spriteDistance, order};
     }
 
     drawSkyBox(camera: Camera): void {
@@ -546,9 +574,9 @@ export class RayCaster {
                 floorX += floorStepX;
                 floorY += floorStepY;
 
-                let distance : number = this.calculateDistance(x, y, canvasWidth, canvasHeight) / Renderer.getCanvasHeight();
+                let distance: number = this.calculateDistance(x, y, canvasWidth, canvasHeight) / Renderer.getCanvasHeight();
 
-                if (this.isNearLight(cellX,cellY)) {
+                if (this.isNearLight(cellX, cellY)) {
                     distance = 0;
                 }
 
@@ -624,7 +652,7 @@ export class RayCaster {
         }
     }
 
-    private processTransparentWall(camera: Camera, side: number,mapX: number, mapY: number, x: number) {
+    private processTransparentWall(camera: Camera, side: number, mapX: number, mapY: number, x: number) {
         let wallDefined: boolean = false;
         for (let i: number = 0; i < this._transparentWall.length; i++) {
             if (this._transparentWall[i].xMap == mapX && this._transparentWall[i].yMap == mapY) {
@@ -640,9 +668,9 @@ export class RayCaster {
         }
     }
 
-    private isNearLight(x: number, y: number) : boolean {
+    private isNearLight(x: number, y: number): boolean {
 
-        let nearWall : GameEntity = this._worldMap.getEntityAtPosition(x + 1, y);
+        let nearWall: GameEntity = this._worldMap.getEntityAtPosition(x + 1, y);
 
         if (nearWall && nearWall.hasComponent("lightSource")) {
             return true;
