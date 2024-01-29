@@ -40,6 +40,7 @@ import {LightSourceComponent} from "../../lib/ecs/components/rendering/lightSour
 import {PushWallComponent} from "../../lib/ecs/components/pushWallComponent";
 import {TileHeightComponent} from "../../lib/ecs/components/rendering/tileHeightComponent";
 import {CubeSpriteComponent} from "../../lib/ecs/components/rendering/cubeSpriteComponent";
+import {TransparentComponent} from "../../lib/ecs/components/transparentComponent";
 
 
 export class TestScreen implements GameScreen {
@@ -100,10 +101,17 @@ export class TestScreen implements GameScreen {
             .addComponent(new SpriteComponent(new Sprite(128,128, require("../../assets/wall.png"))))
             .build();
 
+        let fence: GameEntity = new GameEntityBuilder("fence")
+            .addComponent(new WallComponent())
+            .addComponent(new TransparentComponent())
+            .addComponent(new SpriteComponent(new Sprite(128,128, require("../../assets/fence.png"))))
+            .build();
+
         let torch: GameEntity = new GameEntityBuilder("torch")
             .addComponent(new WallComponent())
             .addComponent(new LightSourceComponent(5))
             .addComponent(new PushWallComponent())
+            .addComponent(new TileHeightComponent(1))
             .addComponent(new CubeSpriteComponent(
                 [
                     new Sprite(128,128, require("../../assets/vendingFront.png")),
@@ -148,8 +156,9 @@ export class TestScreen implements GameScreen {
             }
         }
 
-        wallGrid[4+(5*worldWidth)] = 2;
-
+        wallGrid[5+(6*worldWidth)] = 2;
+        wallGrid[6+(6*worldWidth)] = 4;
+        wallGrid[7+(6*worldWidth)] = 2;
 
         let wallTranslationTable: Map<number, GameEntity> = new Map<number, GameEntity>();
 
@@ -157,6 +166,7 @@ export class TestScreen implements GameScreen {
         wallTranslationTable.set(1, wall);
         wallTranslationTable.set(2, torch);
         wallTranslationTable.set(3, door);
+        wallTranslationTable.set(4, fence);
 
 
         this._worldMap.loadMap({
@@ -175,7 +185,7 @@ export class TestScreen implements GameScreen {
 
         let fovDegrees = 66;
         let fovRadians = fovDegrees * (Math.PI / 180); // Convert to radians
-        this._camera = new Camera(2, 2, 1, 1, Math.tan(fovRadians / 2));
+        this._camera = new Camera(6, 2, 0, 1, Math.tan(fovRadians / 2));
 
         this._player = new GameEntityBuilder("player")
             .addComponent(new CameraComponent(this._camera))

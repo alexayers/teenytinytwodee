@@ -13,6 +13,7 @@ import {AnimatedSprite} from "../animatedSprite";
 import {AnimatedSpriteComponent} from "../../ecs/components/rendering/animatedSpriteComponent";
 import {TileHeightComponent} from "../../ecs/components/rendering/tileHeightComponent";
 import {CubeSpriteComponent, CubeSpriteSide} from "../../ecs/components/rendering/cubeSpriteComponent";
+import {Game} from "../../../app/main";
 
 enum WallSide {
     X_SIDE,
@@ -151,11 +152,11 @@ export class RayCaster {
                 } else if (gameEntity.hasComponent("transparent")) {
                     if (side == WallSide.Y_SIDE) {
                         if (sideDistY - (deltaDistY / 2) < sideDistX) {
-                            this.processTransparentWall(camera, side, mapX, mapY, x);
+                            this.processTransparentWall(gameEntity,camera, side, mapX, mapY, x);
                         }
                     } else {
                         if (sideDistX - (deltaDistX / 2) < sideDistY) {
-                            this.processTransparentWall(camera, side, mapX, mapY, x);
+                            this.processTransparentWall(gameEntity,camera, side, mapX, mapY, x);
                         }
                     }
                 } else if (!gameEntity.hasComponent("door")
@@ -185,6 +186,7 @@ export class RayCaster {
         //let tileHeight = gameEntity.hasComponent("tileHeight") ? gameEntity.getComponent("tileHeight") : 1;
 
         let tileHeight = 1;
+        let lineHeight: number;
 
         if (gameEntity.hasComponent("tileHeight")) {
             let tileHeightComponent : TileHeightComponent = gameEntity.getComponent("tileHeight") as TileHeightComponent;
@@ -193,9 +195,10 @@ export class RayCaster {
 
 
         // Calculate the height of the wall slice to be drawn on screen
-        let lineHeight: number = Math.round((Renderer.getCanvasHeight() / perpWallDist) * tileHeight);
-        let drawStart: number;
+        lineHeight = Math.round((Renderer.getCanvasHeight() / perpWallDist) * tileHeight);
 
+
+        let drawStart: number;
 
         drawStart = -lineHeight / 2 + Math.round(Renderer.getCanvasHeight() / 2);
 
@@ -652,18 +655,21 @@ export class RayCaster {
         }
     }
 
-    private processTransparentWall(camera: Camera, side: number, mapX: number, mapY: number, x: number) {
+    private processTransparentWall(gameEntity: GameEntity, camera: Camera, side: number, mapX: number, mapY: number, x: number) {
         let wallDefined: boolean = false;
         for (let i: number = 0; i < this._transparentWall.length; i++) {
             if (this._transparentWall[i].xMap == mapX && this._transparentWall[i].yMap == mapY) {
-                this._transparentWall[i].xScreen = x;
+                this._transparentWall[i].xScreen.push(x);
                 wallDefined = true;
                 break;
             }
         }
 
         if (!wallDefined) {
-            let tpWall: TransparentWall = new TransparentWall(camera, mapX, mapY, side, x, this._cameraXCoords);
+
+            let spriteComponent: SpriteComponent = gameEntity.getComponent("sprite") as SpriteComponent;
+
+            let tpWall: TransparentWall = new TransparentWall(spriteComponent.sprite,camera, mapX, mapY, side, [x], this._cameraXCoords);
             this._transparentWall.push(tpWall);
         }
     }

@@ -1,4 +1,6 @@
 import {Camera} from "./camera";
+import {Renderer} from "../renderer";
+import {Sprite} from "../sprite";
 
 
 export class TransparentWall {
@@ -6,21 +8,23 @@ export class TransparentWall {
     private _xMap: number;
     private _yMap: number;
     private _side: number;
-    private _xScreen : number;
+    private _xScreen: Array<number> = [];
     private _camera: Camera
-    private _cameraXCoords : Array<number>;
+    private _cameraXCoords: Array<number>;
+    private _sprite: Sprite;
 
-    constructor(camera:Camera, xMap : number, yMap : number, side: number, xScreen : number, cameraXCoords: Array<number>) {
+    constructor(sprite: Sprite, camera: Camera, xMap: number, yMap: number, side: number, xScreen: Array<number>, cameraXCoords: Array<number>) {
 
-        this._camera =camera;
+        this._camera = camera;
         this._xMap = xMap;
         this._yMap = yMap;
         this._side = side;
         this._xScreen = xScreen;
         this._cameraXCoords = cameraXCoords;
+        this._sprite = sprite;
     }
 
-    getRayDir(x: number, side: number) : number {
+    getRayDir(x: number, side: number): number {
         if (side == 1) {
             return this._camera.yDir + this._camera.yPlane * this._cameraXCoords[x];
         } else {
@@ -28,9 +32,9 @@ export class TransparentWall {
         }
     }
 
-    getPerpDist(x : number) : number {
-        let step :number = 1;
-        let rayDir :number = this.getRayDir(x, this._side);
+    getPerpDist(x: number): number {
+        let step: number = 1;
+        let rayDir: number = this.getRayDir(x, this._side);
 
         if (rayDir < 0) {
             step = -1;
@@ -43,23 +47,18 @@ export class TransparentWall {
         }
     }
 
-    draw() : void {
+    draw(): void {
 
+    //    Renderer.saveContext();
 
-        return;
+   //     Renderer.setAlpha(0.25);
 
-        /*
-        Renderer.saveContext();
+        for (let x: number = this._xScreen[0]; x < this._xScreen[0] + this._xScreen.length; x++) {
+            let perpDist: number = this.getPerpDist(x);
+            let lineHeight: number = Math.round(Renderer.getCanvasHeight() / perpDist);
+            let drawStart: number = -lineHeight / 2 + Renderer.getCanvasHeight() / 2;
 
-        Renderer.setAlpha(0.5);
-
-
-        for (let x=this._xScreen[0]; x<this._xScreen[0] + this._xScreen.length; x++) {
-            let perpDist :number = this.getPerpDist(x);
-            let lineHeight :number = Math.round(Renderer.getCanvasHeight() / perpDist);
-            let drawStart :number = -lineHeight / 2 + Renderer.getCanvasHeight()/2;
-
-            let wallX :number;
+            let wallX: number;
             if (this._side == 0) {
                 wallX = this._camera.yPos + perpDist * this.getRayDir(x, 1);
             } else if (this._side == 1) {
@@ -69,15 +68,14 @@ export class TransparentWall {
             wallX -= Math.floor(wallX);
 
 
-            let texX = Math.floor(wallX * mapForceFieldPic.width);
-            Renderer.renderClippedImage(mapForceFieldPic, texX, 0, 1, mapForceFieldPic.height, x, drawStart, 1, lineHeight);
-
+            let texX: number = Math.floor(wallX * this._sprite.image.width);
+            Renderer.renderClippedImage(this._sprite.image, texX, 0, 1, this._sprite.image.height, x, drawStart, 1, lineHeight);
 
         }
 
-        Renderer.restoreContext()
+    //    Renderer.restoreContext()
 
-         */
+
     }
 
 
@@ -105,13 +103,6 @@ export class TransparentWall {
         this._side = value;
     }
 
-    get xScreen(): number {
-        return this._xScreen;
-    }
-
-    set xScreen(value: number) {
-        this._xScreen = value;
-    }
 
     get camera(): Camera {
         return this._camera;
@@ -127,5 +118,22 @@ export class TransparentWall {
 
     set cameraXCoords(value: Array<number>) {
         this._cameraXCoords = value;
+    }
+
+
+    get xScreen(): Array<number> {
+        return this._xScreen;
+    }
+
+    set xScreen(value: Array<number>) {
+        this._xScreen = value;
+    }
+
+    get sprite(): Sprite {
+        return this._sprite;
+    }
+
+    set sprite(value: Sprite) {
+        this._sprite = value;
     }
 }
