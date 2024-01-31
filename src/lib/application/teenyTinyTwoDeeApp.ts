@@ -13,20 +13,24 @@ import {GlobalLogic} from "./globalLogic";
 
 const cfg = require("../../cfg/configuration.json");
 
-const framesPerSecond: number = 120;
+const framesPerSecond: number = 60;
 
 export class TeenyTinyTwoDeeApp {
 
     private _gameScreens: Map<string, GameScreen>;
     private _currentScreen: string;
-
+    private _lastFrameTime: number;
 
 
     constructor() {
+
+        this._lastFrameTime = performance.now();
+
+
         ConfigurationManager.init(cfg);
         logger(LogType.INFO, "TeenyTinyTwoDeeApp V: 0.0.1");
 
-        document.addEventListener('keydown', (event : KeyboardEvent) => {
+        document.addEventListener('keydown', (event: KeyboardEvent) => {
 
             event.preventDefault();
 
@@ -35,7 +39,7 @@ export class TeenyTinyTwoDeeApp {
             );
         });
 
-        document.addEventListener('keyup', (event : KeyboardEvent) => {
+        document.addEventListener('keyup', (event: KeyboardEvent) => {
 
             event.preventDefault();
 
@@ -44,16 +48,16 @@ export class TeenyTinyTwoDeeApp {
             );
         });
 
-        document.addEventListener('mousedown', (event : MouseEvent ) => {
+        document.addEventListener('mousedown', (event: MouseEvent) => {
 
             GameEventBus.publish(
-                new GameEvent("mouseDownEvent",event)
+                new GameEvent("mouseDownEvent", event)
             );
         });
 
-        document.addEventListener('mousemove', (event ) => {
+        document.addEventListener('mousemove', (event) => {
             GameEventBus.publish(
-                new GameEvent("mouseMoveEvent",event)
+                new GameEvent("mouseMoveEvent", event)
             );
         });
 
@@ -76,7 +80,7 @@ export class TeenyTinyTwoDeeApp {
 
         GameEventBus.register("mouseDownEvent", (gameEvent: GameEvent) => {
 
-            let mouseButton : MouseButton;
+            let mouseButton: MouseButton;
 
             Mouse.x = gameEvent.payload.x;
             Mouse.y = gameEvent.payload.y;
@@ -100,7 +104,7 @@ export class TeenyTinyTwoDeeApp {
         });
     }
 
-    run(gameScreens:Map<string, GameScreen>, currentScreen: string) : void {
+    run(gameScreens: Map<string, GameScreen>, currentScreen: string): void {
         LocalStorage.init();
         Renderer.init();
         AudioManager.init();
@@ -122,27 +126,34 @@ export class TeenyTinyTwoDeeApp {
             this._gameScreens.get(this._currentScreen).onEnter();
         });
 
-        GameEventBus.publish(new ScreenChangeEvent( currentScreen))
+        GameEventBus.publish(new ScreenChangeEvent(currentScreen))
 
         this.gameLoop();
     }
 
 
-
     gameLoop() {
+
+        let now = performance.now();
+        let fps = 1000 / (now - this._lastFrameTime);
+        this._lastFrameTime = now;
+
+        GlobalState.createState("fps", Math.round(fps));
 
         GlobalLogic.execute();
         this._gameScreens.get(this._currentScreen).logicLoop();
 
         Renderer.clearScreen();
 
+
         this._gameScreens.get(this._currentScreen).renderLoop();
+        Renderer.swapCanvas();
+
 
         setTimeout(() => {
             requestAnimationFrame(this.gameLoop.bind(this));
         }, 1000 / framesPerSecond);
     }
-
 
 
     resize() {

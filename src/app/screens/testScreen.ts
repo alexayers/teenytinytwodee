@@ -189,7 +189,7 @@ export class TestScreen implements GameScreen {
             wallGrid: wallGrid,
             height: worldHeight,
             width: worldWidth,
-            lightRange: 9,
+            lightRange: 50,
             skyColor: new Color(82, 169, 202),
             wallTranslationTable: wallTranslationTable,
 
@@ -393,14 +393,23 @@ export class TestScreen implements GameScreen {
 
         let cameraComponent: CameraComponent = this._player.getComponent("camera") as CameraComponent;
 
-        /*
+
         Renderer.print(`xPos: ${Math.floor(cameraComponent.xPos)} yPos: ${Math.floor(cameraComponent.yPos)} xPlane: ${Math.floor(cameraComponent.xPlane)} yPlane: ${Math.floor(cameraComponent.yPlane)} xDir: ${Math.floor(cameraComponent.xDir)} yDir: ${Math.floor(cameraComponent.yDir)}`, 50, 50, {
             family: "Arial",
             size: 20,
             color: Colors.RED()
         });
 
-         */
+
+        Renderer.print(`FPS: ${GlobalState.getState("fps")}`,
+            50, 530, {
+            family: "Arial",
+            size: 20,
+            color: Colors.RED()
+        });
+
+
+
 
     }
 

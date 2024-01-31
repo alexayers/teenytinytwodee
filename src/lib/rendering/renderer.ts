@@ -13,6 +13,9 @@ export class Renderer {
     private static _dataCanvas: HTMLCanvasElement;
     private static _dataContext: CanvasRenderingContext2D;
 
+    private static _offScreenCanvas: HTMLCanvasElement;
+    private static _offScreenCxt: CanvasRenderingContext2D;
+
     public static init(): void {
 
         let container: HTMLDivElement = document.createElement('div');
@@ -37,6 +40,14 @@ export class Renderer {
         this._dataCanvas.width = 1024;
         this._dataCanvas.height = 1024;
         this._dataContext = this._dataCanvas.getContext("2d");
+
+
+        this._offScreenCanvas = document.createElement('canvas');
+
+        this._offScreenCanvas.width = 1024;
+        this._offScreenCanvas.height = 1024;
+        this._offScreenCxt = this._offScreenCanvas.getContext('2d');
+        Renderer._offScreenCxt.imageSmoothingEnabled = false;
     }
 
 
@@ -69,18 +80,18 @@ export class Renderer {
 
         if (flip) {
 
-            Renderer._ctx.translate(x + width, y);
-            Renderer._ctx.scale(-1, 1);
+            Renderer._offScreenCxt.translate(x + width, y);
+            Renderer._offScreenCxt.scale(-1, 1);
 
-            Renderer._ctx.drawImage(
+            Renderer._offScreenCxt.drawImage(
                 image,
                 0, 0, width, height
             );
 
-            Renderer._ctx.setTransform(1, 0, 0, 1, 0, 0);
+            Renderer._offScreenCxt.setTransform(1, 0, 0, 1, 0, 0);
 
         } else {
-            Renderer._ctx.drawImage(
+            Renderer._offScreenCxt.drawImage(
                 image,
                 x,
                 y,
@@ -101,26 +112,34 @@ export class Renderer {
                               height: number,
                               shouldFlip: boolean = false): void {
 
-        // Save the current state of the context
-        Renderer._ctx.save();
+
 
         if (shouldFlip) {
+            // Save the current state of the context
+            Renderer._offScreenCxt.save();
+
             // Flip the context horizontally around the image's vertical axis
-            Renderer._ctx.scale(-1, 1);
-            Renderer._ctx.translate(-x - width, 0);
+            Renderer._offScreenCxt.scale(-1, 1);
+            Renderer._offScreenCxt.translate(-x - width, 0);
         }
 
         // Draw the image with adjusted context
-        Renderer._ctx.drawImage(
+        Renderer._offScreenCxt.drawImage(
             image,
             sx, sy, swidth, sheight, x, y, width, height
         );
 
-        // Restore the context to its original state
-        Renderer._ctx.restore();
+        if (shouldFlip) {
+            // Restore the context to its original state
+            Renderer._offScreenCxt.restore();
+        }
 
     }
 
+    static swapCanvas() : void {
+        Renderer._ctx.drawImage(Renderer._offScreenCanvas, 0, 0, 1024, 1024);
+        Renderer._offScreenCxt.clearRect(0, 0, Renderer._offScreenCanvas.width, Renderer._canvas.height);
+    }
 
     static calculateTextWidth(text: string, font: string): number {
         const context = Renderer._calculationCanvas.getContext("2d");

@@ -489,18 +489,19 @@ export class RayCaster {
     drawSkyBox(camera: Camera): void {
 
 
-        /*
+/*
                 // Ground
-                Renderer.rectGradient(
+                Renderer.rect(
                     0,
                     Renderer.getCanvasHeight() / 2,
                     Renderer.getCanvasWidth(),
                     Renderer.getCanvasHeight(),
-                    this._worldMap.worldDefinition.floorColor,
-                    Colors.BLACK(),
+                    this._worldMap.worldDefinition.floorColor
                 );
 
-                 */
+ */
+
+
 
         this.renderFloorsAndCeiling(
             camera.xDir,
@@ -626,6 +627,7 @@ export class RayCaster {
     }
 
     combSort(order: Array<number>, dist: Array<number>): void {
+
 
         let amount: number = order.length;
         let gap: number = amount;
