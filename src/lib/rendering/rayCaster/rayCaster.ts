@@ -14,6 +14,7 @@ import {AnimatedSpriteComponent} from "../../ecs/components/rendering/animatedSp
 import {TileHeightComponent} from "../../ecs/components/rendering/tileHeightComponent";
 import {CubeSpriteComponent, CubeSpriteSide} from "../../ecs/components/rendering/cubeSpriteComponent";
 import {Game} from "../../../app/main";
+import {Colors} from "../../utils/colorUtils";
 
 enum WallSide {
     X_SIDE,
@@ -188,6 +189,8 @@ export class RayCaster {
         let tileHeight = 1;
         let lineHeight: number;
 
+        let drawStart: number;
+
         if (gameEntity.hasComponent("tileHeight")) {
             let tileHeightComponent : TileHeightComponent = gameEntity.getComponent("tileHeight") as TileHeightComponent;
             tileHeight = tileHeightComponent.tileHeight;
@@ -196,11 +199,7 @@ export class RayCaster {
 
         // Calculate the height of the wall slice to be drawn on screen
         lineHeight = Math.round((Renderer.getCanvasHeight() / perpWallDist) * tileHeight);
-
-
-        let drawStart: number;
-
-        drawStart = -lineHeight / 2 + Math.round(Renderer.getCanvasHeight() / 2);
+        drawStart = (-lineHeight/2) * tileHeight + Math.round(Renderer.getCanvasHeight() / 2);
 
 
         // Calculate the exact position where the wall is hit
@@ -514,19 +513,18 @@ export class RayCaster {
             32
         );
 
-        /*
+
         // Sky
-        Renderer.rectGradient(
+        Renderer.rect(
             0,
             0,
             Renderer.getCanvasWidth(),
             Renderer.getCanvasHeight() / 2,
-            Colors.BLACK(),
             this._worldMap.worldDefinition.skyColor,
         );
 
 
-         */
+
     }
 
     preRenderTexture(texture: HTMLImageElement, texWidth: number, texHeight: number): ImageData {

@@ -23,6 +23,10 @@ export class MathUtils {
         return Math.floor(Math.random() * (max - min + 1) + min);
     }
 
+    static getRandomBetweenWithoutFloor(min: number, max: number) : number {
+        return Math.random() * (max - min + 1) + min;
+    }
+
     static isPointWithinQuad(point: Point, x: number, y: number, width: number, height: number) : boolean {
 
         if (point.x >= x &&
@@ -35,8 +39,8 @@ export class MathUtils {
         }
     }
 
-    static getRandomArrayElement(array: Array<any>) : number {
-        return MathUtils.getRandomBetween(0, array.length -1);
+    static getRandomArrayElement(array: Array<any>) : any {
+        return array[MathUtils.getRandomBetween(0, array.length -1)];
     }
 
     static distanceBetweenTwoPixelCoords(x1: number, y1 :number, x2 : number, y2: number) : number {

@@ -302,4 +302,7 @@ export class Renderer {
     }
 
 
+    static getContext() {
+        return Renderer._ctx;
+    }
 }

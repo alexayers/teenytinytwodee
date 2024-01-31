@@ -41,6 +41,7 @@ import {PushWallComponent} from "../../lib/ecs/components/pushWallComponent";
 import {TileHeightComponent} from "../../lib/ecs/components/rendering/tileHeightComponent";
 import {CubeSpriteComponent} from "../../lib/ecs/components/rendering/cubeSpriteComponent";
 import {TransparentComponent} from "../../lib/ecs/components/transparentComponent";
+import {MathUtils} from "../../lib/utils/mathUtils";
 
 
 export class TestScreen implements GameScreen {
@@ -109,9 +110,24 @@ export class TestScreen implements GameScreen {
 
         let torch: GameEntity = new GameEntityBuilder("torch")
             .addComponent(new WallComponent())
-            .addComponent(new LightSourceComponent(5))
+
             .addComponent(new PushWallComponent())
-            .addComponent(new TileHeightComponent(1))
+            .addComponent(new TileHeightComponent(2))
+            .addComponent(new CubeSpriteComponent(
+                [
+                    new Sprite(128,128, require("../../assets/vendingFront.png")),
+                    new Sprite(128,128, require("../../assets/vendingBack.png")),
+                    new Sprite(128,128, require("../../assets/vendingLeft.png")),
+                    new Sprite(128,128, require("../../assets/vendingRight.png")),
+                ]
+            ))
+
+            .build();
+
+        let torch2: GameEntity = new GameEntityBuilder("torch2")
+            .addComponent(new WallComponent())
+
+            .addComponent(new PushWallComponent())
             .addComponent(new CubeSpriteComponent(
                 [
                     new Sprite(128,128, require("../../assets/vendingFront.png")),
@@ -141,8 +157,8 @@ export class TestScreen implements GameScreen {
 
         let wallGrid: Array<number> = [];
 
-        let worldWidth = 50;
-        let worldHeight = 50;
+        let worldWidth = 10;
+        let worldHeight = 10;
 
         for (let y = 0; y < worldHeight; y++) {
             for (let x = 0; x < worldWidth; x++) {
@@ -156,9 +172,8 @@ export class TestScreen implements GameScreen {
             }
         }
 
-        wallGrid[5+(6*worldWidth)] = 2;
-        wallGrid[6+(6*worldWidth)] = 4;
-        wallGrid[7+(6*worldWidth)] = 2;
+
+
 
         let wallTranslationTable: Map<number, GameEntity> = new Map<number, GameEntity>();
 
@@ -167,15 +182,15 @@ export class TestScreen implements GameScreen {
         wallTranslationTable.set(2, torch);
         wallTranslationTable.set(3, door);
         wallTranslationTable.set(4, fence);
-
+        wallTranslationTable.set(5, torch2);
 
         this._worldMap.loadMap({
             floorColor: new Color(74, 67, 57),
             wallGrid: wallGrid,
             height: worldHeight,
             width: worldWidth,
-            lightRange: 50,
-            skyColor: new Color(40, 40, 40),
+            lightRange: 9,
+            skyColor: new Color(82, 169, 202),
             wallTranslationTable: wallTranslationTable,
 
             items: this.buildItems(),
@@ -211,6 +226,34 @@ export class TestScreen implements GameScreen {
                 16,32,"default")))
             .build()
         )
+
+        let grass1 = require("../../assets/grass.png");
+        let grass2 = require("../../assets/grass2.png");
+        let grass3 = require("../../assets/grass3.png");
+        let grass4 = require("../../assets/grass4.png");
+
+        let grasses : Array<any> = [];
+        grasses.push(grass1);
+        grasses.push(grass2);
+        grasses.push(grass3);
+        grasses.push(grass4);
+
+        for (let i = 0; i < 250; i++) {
+
+            animation = new Map<string, Array<string>>();
+
+            animation.set("default", []);
+            animation.get("default").push(MathUtils.getRandomArrayElement(grasses));
+
+            gameEntities.push(new GameEntityBuilder("grass")
+                .addComponent(new ItemComponent())
+                .addComponent(new DistanceComponent())
+                .addComponent(new PositionComponent(MathUtils.getRandomBetweenWithoutFloor(1,8),MathUtils.getRandomBetweenWithoutFloor(1,8)))
+                .addComponent(new AnimatedSpriteComponent(new AnimatedSprite(animation,
+                    16,32,"default")))
+                .build()
+            )
+        }
 
         return gameEntities;
     }
@@ -343,7 +386,6 @@ export class TestScreen implements GameScreen {
 
         let xOffset: number = Math.sin(this._moveSway / 2) * 40,
             yOffset: number = Math.cos(this._moveSway) * 30;
-
 
 
         Renderer.rect(0, 0, Renderer.getCanvasWidth(), 70, Colors.BLACK());

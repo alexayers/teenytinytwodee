@@ -17,6 +17,9 @@ export class Camera {
     private _xPlane: number;
     private _yPlane: number;
     private _worldMap : WorldMap = WorldMap.getInstance();
+    private _time = 0; // Initialize time
+    private readonly _amplitude = 0.5; // Height of the bob, adjust as needed
+    private readonly _frequency = 0.5; // Speed of the bob, adjust as needed
 
     constructor(xPos: number, yPos: number, xDir: number, yDir: number, fov: number) {
 
@@ -35,6 +38,7 @@ export class Camera {
     move(moveX: number, moveY: number): void {
 
 
+        let moved: boolean = false;
         let gameEntity : GameEntity = this._worldMap.getEntityAtPosition(Math.floor(this._xPos + moveX),Math.floor(this._yPos));
 
         if (!gameEntity) {
@@ -83,7 +87,10 @@ export class Camera {
             }
         }
 
+
     }
+
+
 
     private npcPresent() {
        let gameEntities:Array<GameEntity>= this._worldMap.getGameEntities();
